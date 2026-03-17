@@ -11,13 +11,22 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dulcería QRM - Catálogo de Productos</title>
+    <title>Catálogo de Productos - Dulcería Quiromar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
+                    fontFamily: {
+                        serif: ['"Cormorant Garamond"','serif'],
+                        sans: ['Montserrat','sans-serif'],
+                        rounded: ['Poppins','ui-sans-serif'],
+                        fredoka: ['Fredoka', 'sans-serif']
+                    },
                     colors: {
                         'sweet-blue': '#00BFFF',
                         'dark-blue': '#1e3a8a',
@@ -49,27 +58,43 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
             border-color: #00BFFF;
             box-shadow: 0 0 0 2px rgba(0, 191, 255, 0.2);
         }
+        .top-accent {
+            height: 4px;
+            background: linear-gradient(90deg, #00BFFF, #1e3a8a, #00BFFF);
+        }
+        .header-content h1 {
+            font-family: 'Fredoka', sans-serif;
+            letter-spacing: 0.05em;
+            text-shadow: 3px 3px 0px rgba(0,0,0,0.3), 6px 6px 0px rgba(0,0,0,0.2), 9px 9px 0px rgba(0,0,0,0.1), 12px 12px 20px rgba(0,0,0,0.4);
+        }
     </style>
 </head>
-<body class="bg-white min-h-screen relative">
-    <!-- Particles Background -->
-    <div id="particles-js"></div>
+<body class="font-rounded">
+    <!-- Admin Link -->
+    <div class="fixed top-4 right-4 z-50">
+        <a href="admin/login.php" class="bg-sweet-blue text-white px-4 py-2 rounded-full hover:bg-blue-600 transition duration-300 text-sm shadow-lg">Admin</a>
+    </div>
 
-    <!-- Header -->
-    <header class="bg-white shadow-lg relative z-10">
-        <div class="container mx-auto px-4 py-6 flex justify-between items-center">
-            <h1 class="text-4xl font-bold text-dark-blue font-cursive">🐻‍❄️🍭</h1>
-            <nav>
-                <a href="admin/login.php" class="bg-sweet-blue text-white px-4 py-2 rounded-full hover:bg-blue-600 transition duration-300">Admin</a>
-            </nav>
+    <div class="top-accent"></div>
+
+    <header class="bg-gradient-to-b from-blue-900 to-blue-800 text-white py-20 text-center relative overflow-hidden border-b-4 border-blue-400" style="background-image: url('assets/imgs/actuality/fondo.webp'); background-size: cover; background-position: center;">
+        <div class="header-content max-w-3xl mx-auto px-6 relative z-10">
+            <h1 class="text-5xl md:text-6xl font-bold tracking-wide">DULCERÍA QUIROMAR</h1>
         </div>
     </header>
 
-    <!-- Main Content -->
-    <main class="container mx-auto px-4 py-12 relative z-10">
-        <!-- <h2 class="text-3xl font-semibold text-center text-gray-800 mb-12">¡Descubre nuestros deliciosos productos!</h2> -->
+    <main class="max-w-6xl mx-auto px-6 py-12">
+        <!-- <div class="catalog-intro text-center max-w-2xl mx-auto mb-10">
+            <h2 class="text-2xl md:text-3xl font-serif text-blue-900 mb-3" style="font-family: 'Fredoka', sans-serif; font-weight: 600;">Catálogo de Productos</h2>
+            <p class="text-gray-600">Ofrecemos dulces y snacks perfectos para complementar la oferta de tu colegio con calidad, variedad y excelentes precios.</p>
+        </div> -->
+
+        <div class="product-count text-center mb-8">
+            <p class="text-gray-600" style="font-family: 'Fredoka', sans-serif; font-size: 1.1rem;">Mostrando <span id="productCounter" class="font-serif text-lg text-blue-700" style="font-family: 'Fredoka', sans-serif; font-weight: 600;"><?php echo count($products); ?></span> productos disponibles</p>
+        </div>
+
         <form id="order-form">
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
+            <div class="products-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6" id="productsGrid">
                 <?php foreach ($products as $product): ?>
                     <div class="product-card bg-white rounded-xl shadow-lg overflow-hidden border-2 border-sweet-blue hover:border-dark-blue">
                         <div class="h-80 sm:h-64 bg-white flex items-center justify-center relative overflow-hidden">
@@ -120,12 +145,14 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <?php endif; ?>
     </main>
 
-    <!-- Footer -->
-    <footer class="bg-white py-6 mt-12 relative z-10 border-t">
-        <div class="container mx-auto px-4 text-center">
-            <p class="text-gray-600">&copy; 2026 Dulcería Quiromar 🍭</p>
+    <footer class="bg-white py-6 mt-12 border-t">
+        <div class="max-w-6xl mx-auto px-6 text-center">
+            <p class="text-gray-600">© 2026 Dulcería Quiromar.</p>
         </div>
     </footer>
+
+    <!-- Particles Background -->
+    <div id="particles-js"></div>
 
     <script>
         particlesJS('particles-js', {
