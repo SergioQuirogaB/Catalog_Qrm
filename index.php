@@ -212,7 +212,7 @@ foreach ($images as $img) {
         function sendOrder() {
             const form = document.getElementById('order-form');
             const formData = new FormData(form);
-            let message = 'Hola, quiero hacer un pedido:\n\n';
+            let message = 'Hola Sergio 👋🏽, quiero hacer mi pedido:\n\n';
             let hasItems = false;
 
             for (let [key, value] of formData.entries()) {
@@ -221,7 +221,7 @@ foreach ($images as $img) {
                     // Aquí necesitaríamos mapear el ID al nombre, pero como es PHP, usamos un array
                     const productName = document.querySelector(`input[name="${key}"]`).closest('.product-card').querySelector('h3').textContent;
                     const price = document.querySelector(`input[name="${key}"]`).closest('.product-card').querySelector('p').textContent.replace('$', '').trim();
-                    message += `${productName} - Cantidad: ${value} - Precio: $${price}\n`;
+                    message += `🍭 ${productName} - Cantidad: ${value} - Precio: $${price}\n`;
                     hasItems = true;
                 }
             }
@@ -231,9 +231,9 @@ foreach ($images as $img) {
                 return;
             }
 
-            message += '\nTotal aproximado: (calcula tú)\n\nGracias!';
+            message += '\nGracias!';
 
-            const whatsappUrl = `https://wa.me/573133813155?text=${encodeURIComponent(message)}`;
+            const whatsappUrl = `https://wa.me/573133813154?text=${encodeURIComponent(message)}`;
             window.open(whatsappUrl, '_blank');
         }
     </script>

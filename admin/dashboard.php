@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['order'])) {
         $stmt->execute([$index + 1, $productId]);
     }
 
-    header('Location: dashboard.php');
+    header('Location: dashboard.php?success=order');
     exit;
 }
 
@@ -34,7 +34,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['name']) && isset($_FIL
     $price = $_POST['price'];
     $tag = $_POST['tag'];
 
-    // Determinar la siguiente posición
     $posStmt = $db->query("SELECT COALESCE(MAX(position), 0) + 1 FROM products");
     $position = $posStmt->fetchColumn();
 
@@ -42,7 +41,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['name']) && isset($_FIL
     $stmt->execute([$name, $price, $tag, $position]);
     $productId = $db->lastInsertId();
 
-    // Guardar imágenes múltiples
     $target_dir = "../uploads/";
     $files = $_FILES['images'];
     $imageStmt = $db->prepare("INSERT INTO product_images (product_id, image_path, position) VALUES (?, ?, ?)");
@@ -68,7 +66,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['name']) && isset($_FIL
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['delete'])) {
     $id = $_POST['delete'];
 
-    // Eliminar imágenes asociadas (archivos + DB)
     $imgStmt = $db->prepare("SELECT image_path FROM product_images WHERE product_id = ?");
     $imgStmt->execute([$id]);
     foreach ($imgStmt->fetchAll(PDO::FETCH_COLUMN) as $imgPath) {
@@ -79,7 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['delete'])) {
 
     $stmt = $db->prepare("DELETE FROM products WHERE id = ?");
     $stmt->execute([$id]);
-    header('Location: dashboard.php');
+    header('Location: dashboard.php?success=deleted');
     exit;
 }
 
@@ -93,7 +90,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['edit'])) {
     $update_fields = "name = ?, price = ?, tag = ?";
     $params = [$name, $price, $tag];
 
-    // Eliminar imágenes marcadas para borrar
     if (!empty($_POST['delete_images']) && is_array($_POST['delete_images'])) {
         $deleteStmt = $db->prepare("SELECT image_path FROM product_images WHERE id = ? AND product_id = ?");
         $delImgStmt = $db->prepare("DELETE FROM product_images WHERE id = ? AND product_id = ?");
@@ -107,7 +103,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['edit'])) {
         }
     }
 
-    // Agregar nuevas imágenes si se cargaron
     if (!empty($_FILES['edit_images']) && isset($_FILES['edit_images']['name'])) {
         $files = $_FILES['edit_images'];
         $target_dir = "../uploads/";
@@ -130,7 +125,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['edit'])) {
     $params[] = $id;
     $stmt = $db->prepare("UPDATE products SET $update_fields WHERE id = ?");
     $stmt->execute($params);
-    header('Location: dashboard.php');
+    header('Location: dashboard.php?success=edited');
     exit;
 }
 
@@ -145,6 +140,9 @@ $imagesByProduct = [];
 foreach ($images as $image) {
     $imagesByProduct[$image['product_id']][] = $image;
 }
+
+// Leer parámetro de éxito para SweetAlert
+$successType = $_GET['success'] ?? '';
 ?>
 
 <!DOCTYPE html>
@@ -155,6 +153,9 @@ foreach ($images as $image) {
     <title>Dashboard Admin - Dulcería QRM</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <!-- SweetAlert2 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -187,17 +188,25 @@ foreach ($images as $image) {
             border-color: #00BFFF;
             box-shadow: 0 0 0 2px rgba(0, 191, 255, 0.2);
         }
-        .product-item {
-            background: rgba(255, 255, 255, 0.9);
-            border: 1px solid #e5e7eb;
+
+        /* Animación del formulario desplegable */
+        #add-product-form {
+            overflow: hidden;
+            max-height: 0;
+            opacity: 0;
+            transition: max-height 0.4s ease, opacity 0.3s ease, padding 0.3s ease;
+            padding-top: 0;
+            padding-bottom: 0;
         }
-        .product-item:hover {
-            border-color: #00BFFF;
+        #add-product-form.open {
+            max-height: 600px;
+            opacity: 1;
+            padding-top: 2rem;
+            padding-bottom: 2rem;
         }
     </style>
 </head>
 <body class="bg-white min-h-screen relative">
-    <!-- Particles Background -->
     <div id="particles-js"></div>
 
     <!-- Header -->
@@ -212,8 +221,18 @@ foreach ($images as $image) {
     </header>
 
     <main class="container mx-auto px-4 py-8 relative z-10">
-        <!-- Agregar Producto -->
-        <div class="dashboard-card rounded-xl shadow-2xl p-8 mb-8">
+
+        <!-- Botón para mostrar/ocultar formulario -->
+        <div class="flex justify-end mb-4">
+            <button id="toggle-form-btn" onclick="toggleAddForm()"
+                class="flex items-center gap-2 bg-dark-blue text-white px-6 py-3 rounded-full font-semibold hover:bg-blue-900 transition duration-300 shadow-lg">
+                <span id="toggle-icon" class="text-xl font-bold leading-none">+</span>
+                <span id="toggle-label">Nuevo Producto</span>
+            </button>
+        </div>
+
+        <!-- Agregar Producto (oculto por defecto) -->
+        <div class="dashboard-card rounded-xl shadow-2xl px-8 mb-8" id="add-product-form">
             <h2 class="text-2xl font-bold text-dark-blue mb-6 text-center">Agregar Nuevo Producto</h2>
             <form method="post" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                 <div>
@@ -228,6 +247,7 @@ foreach ($images as $image) {
                     <label class="block text-gray-700 font-medium mb-2">Etiqueta</label>
                     <select name="tag" class="input-field w-full px-4 py-3 border border-gray-300 rounded-lg">
                         <option value="Nuevo">Nuevo</option>
+                        <option value="Clásico">Clásico</option>
                         <option value="Agotado">Agotado</option>
                         <option value="Tendencia">Tendencia</option>
                         <option value="Más vendido">Más vendido</option>
@@ -253,11 +273,14 @@ foreach ($images as $image) {
                 <p class="text-sm text-gray-600">Arrastra y suelta los productos para cambiar el orden en que aparecen en el catálogo.</p>
                 <form id="order-form" method="post" class="flex items-center gap-2">
                     <input type="hidden" name="order" id="order-input">
-                    <button type="submit" class="bg-sweet-blue text-white px-4 py-2 rounded-full hover:bg-blue-600 transition duration-200 shadow">
+                    <!-- El botón ahora llama a confirmación SweetAlert antes de enviar -->
+                    <button type="button" onclick="confirmSaveOrder()"
+                        class="bg-sweet-blue text-white px-4 py-2 rounded-full hover:bg-blue-600 transition duration-200 shadow">
                         Guardar orden
                     </button>
                 </form>
             </div>
+
             <?php if (empty($products)): ?>
                 <p class="text-center text-gray-600">No hay productos aún. ¡Agrega el primero!</p>
             <?php else: ?>
@@ -293,6 +316,7 @@ foreach ($images as $image) {
                                             <?php 
                                             switch($product['tag']) {
                                                 case 'Nuevo': echo 'bg-green-100 text-green-800'; break;
+                                                case 'Clásico': echo 'bg-amber-100 text-amber-800'; break;
                                                 case 'Agotado': echo 'bg-red-100 text-red-800'; break;
                                                 case 'Tendencia': echo 'bg-purple-100 text-purple-800'; break;
                                                 case 'Más vendido': echo 'bg-blue-100 text-blue-800'; break;
@@ -306,16 +330,24 @@ foreach ($images as $image) {
                                     <td class="px-4 py-2 text-center">
                                         <div class="flex justify-center space-x-2">
                                             <button onclick="toggleEdit(<?php echo $product['id']; ?>)" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition duration-300">Editar</button>
-                                            <form method="post" class="inline">
+                                            <!-- Eliminar con SweetAlert -->
+                                            <button type="button"
+                                                onclick="confirmDelete(<?php echo $product['id']; ?>, '<?php echo addslashes($product['name']); ?>')"
+                                                class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition duration-300">
+                                                Eliminar
+                                            </button>
+                                            <!-- Formulario oculto para eliminar -->
+                                            <form id="delete-form-<?php echo $product['id']; ?>" method="post" class="hidden">
                                                 <input type="hidden" name="delete" value="<?php echo $product['id']; ?>">
-                                                <button type="submit" onclick="return confirm('¿Eliminar este producto?')" class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition duration-300">Eliminar</button>
                                             </form>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr id="edit-row-<?php echo $product['id']; ?>" class="hidden bg-gray-50">
                                     <td colspan="5" class="px-4 py-4">
-                                        <form method="post" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                        <!-- Formulario edición con SweetAlert al enviar -->
+                                        <form method="post" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-4 gap-4"
+                                            onsubmit="return confirmEdit(event, this)">
                                             <input type="hidden" name="edit_id" value="<?php echo $product['id']; ?>">
                                             <div>
                                                 <label class="block text-gray-700 font-medium mb-1">Nombre</label>
@@ -329,6 +361,7 @@ foreach ($images as $image) {
                                                 <label class="block text-gray-700 font-medium mb-1">Etiqueta</label>
                                                 <select name="edit_tag" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-sweet-blue">
                                                     <option value="Nuevo" <?php if($product['tag']=='Nuevo') echo 'selected'; ?>>Nuevo</option>
+                                                    <option value="Clásico" <?php if($product['tag']=='Clásico') echo 'selected'; ?>>Clásico</option>
                                                     <option value="Agotado" <?php if($product['tag']=='Agotado') echo 'selected'; ?>>Agotado</option>
                                                     <option value="Tendencia" <?php if($product['tag']=='Tendencia') echo 'selected'; ?>>Tendencia</option>
                                                     <option value="Más vendido" <?php if($product['tag']=='Más vendido') echo 'selected'; ?>>Más vendido</option>
@@ -372,6 +405,7 @@ foreach ($images as $image) {
     </main>
 
     <script>
+        // ─── Particles ───────────────────────────────────────────────
         particlesJS('particles-js', {
             particles: {
                 number: { value: 50, density: { enable: true, value_area: 800 } },
@@ -390,6 +424,19 @@ foreach ($images as $image) {
             retina_detect: true
         });
 
+        // ─── Toggle formulario "Nuevo Producto" ──────────────────────
+        let formOpen = false;
+        function toggleAddForm() {
+            const form = document.getElementById('add-product-form');
+            const icon = document.getElementById('toggle-icon');
+            const label = document.getElementById('toggle-label');
+            formOpen = !formOpen;
+            form.classList.toggle('open', formOpen);
+            icon.textContent = formOpen ? '✕' : '+';
+            label.textContent = formOpen ? 'Cerrar' : 'Nuevo Producto';
+        }
+
+        // ─── Drag & Drop orden ────────────────────────────────────────
         function updateOrderInput() {
             const orderInput = document.getElementById('order-input');
             const rows = document.querySelectorAll('tr.draggable-row');
@@ -428,12 +475,9 @@ foreach ($images as $image) {
                 row.addEventListener('drop', (event) => {
                     event.preventDefault();
                     row.classList.remove('bg-blue-50');
-
                     if (!draggedRow || draggedRow === row) return;
-
                     const tbody = row.parentElement;
                     tbody.insertBefore(draggedRow, row);
-
                     updateOrderInput();
                 });
             });
@@ -449,6 +493,101 @@ foreach ($images as $image) {
             const row = document.getElementById('edit-row-' + id);
             row.classList.toggle('hidden');
         }
+
+        // ─── SweetAlert: Guardar orden ────────────────────────────────
+        function confirmSaveOrder() {
+            Swal.fire({
+                title: '¿Guardar nuevo orden?',
+                text: 'Los productos aparecerán en el catálogo en el orden actual.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#00BFFF',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Sí, guardar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('order-form').submit();
+                }
+            });
+        }
+
+        // ─── SweetAlert: Eliminar producto ────────────────────────────
+        function confirmDelete(productId, productName) {
+            Swal.fire({
+                title: '¿Eliminar producto?',
+                html: `<b>"${productName}"</b> será eliminado permanentemente junto con sus imágenes.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('delete-form-' + productId).submit();
+                }
+            });
+        }
+
+        // ─── SweetAlert: Confirmar edición ────────────────────────────
+        function confirmEdit(event, form) {
+            event.preventDefault();
+            Swal.fire({
+                title: '¿Guardar cambios?',
+                text: 'Se actualizará la información del producto.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#22c55e',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Sí, guardar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+            return false;
+        }
+
+        // ─── SweetAlert: Notificaciones al regresar de una acción ─────
+        <?php if ($successType === 'edited'): ?>
+        window.addEventListener('DOMContentLoaded', () => {
+            Swal.fire({
+                title: '¡Producto actualizado!',
+                text: 'Los cambios se guardaron correctamente.',
+                icon: 'success',
+                confirmButtonColor: '#00BFFF',
+                timer: 2500,
+                timerProgressBar: true,
+                showConfirmButton: false
+            });
+        });
+        <?php elseif ($successType === 'deleted'): ?>
+        window.addEventListener('DOMContentLoaded', () => {
+            Swal.fire({
+                title: '¡Producto eliminado!',
+                text: 'El producto fue removido del catálogo.',
+                icon: 'success',
+                confirmButtonColor: '#00BFFF',
+                timer: 2500,
+                timerProgressBar: true,
+                showConfirmButton: false
+            });
+        });
+        <?php elseif ($successType === 'order'): ?>
+        window.addEventListener('DOMContentLoaded', () => {
+            Swal.fire({
+                title: '¡Orden guardado!',
+                text: 'El catálogo mostrará los productos en el nuevo orden.',
+                icon: 'success',
+                confirmButtonColor: '#00BFFF',
+                timer: 2500,
+                timerProgressBar: true,
+                showConfirmButton: false
+            });
+        });
+        <?php endif; ?>
     </script>
 </body>
 </html>
