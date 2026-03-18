@@ -1,9 +1,17 @@
 <?php
 require 'config.php';
 
-// Obtener productos
-$stmt = $db->query("SELECT * FROM products");
+// Obtener productos en el orden configurado
+$stmt = $db->query("SELECT * FROM products ORDER BY position ASC, id ASC");
 $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Cargar imágenes adicionales por producto
+$imageStmt = $db->query("SELECT * FROM product_images ORDER BY product_id, position ASC");
+$images = $imageStmt->fetchAll(PDO::FETCH_ASSOC);
+$imagesByProduct = [];
+foreach ($images as $img) {
+    $imagesByProduct[$img['product_id']][] = $img;
+}
 ?>
 
 <!DOCTYPE html>
@@ -98,14 +106,26 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <?php foreach ($products as $product): ?>
                     <div class="product-card bg-white rounded-xl shadow-lg overflow-hidden border-2 border-sweet-blue hover:border-dark-blue">
                         <div class="h-80 sm:h-64 bg-white flex items-center justify-center relative overflow-hidden">
-                            <?php if ($product['image_path']): ?>
-                                <img src="<?php echo $product['image_path']; ?>" alt="<?php echo $product['name']; ?>" class="max-w-full max-h-full object-contain rounded-t-xl">
+                            <?php
+                                $productImages = $imagesByProduct[$product['id']] ?? [];
+                                $firstImage = $productImages[0]['image_path'] ?? $product['image_path'];
+                            ?>
+
+                            <?php if (!empty($productImages)): ?>
+                                <div class="product-slideshow w-full h-full relative">
+                                    <?php foreach ($productImages as $index => $img): ?>
+                                        <img src="<?php echo $img['image_path']; ?>" alt="<?php echo $product['name']; ?>" class="slideshow-image absolute inset-0 w-full h-full object-contain rounded-t-xl <?php echo $index === 0 ? 'block' : 'hidden'; ?>">
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php elseif ($firstImage): ?>
+                                <img src="<?php echo $firstImage; ?>" alt="<?php echo $product['name']; ?>" class="max-w-full max-h-full object-contain rounded-t-xl">
                             <?php else: ?>
                                 <div class="text-center">
                                     <span class="text-4xl">🍬</span>
                                     <p class="text-gray-500 mt-2">Imagen próximamente</p>
                                 </div>
                             <?php endif; ?>
+
                             <div class="absolute top-2 right-2 <?php 
                                 $tagColors = [
                                     'Nuevo' => 'bg-lime-400 text-black',
@@ -172,6 +192,22 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
             },
             retina_detect: true
         });
+
+        function initProductSlideshows() {
+            const slideshows = document.querySelectorAll('.product-slideshow');
+            slideshows.forEach(slideshow => {
+                const images = slideshow.querySelectorAll('.slideshow-image');
+                if (images.length <= 1) return;
+                let current = 0;
+                setInterval(() => {
+                    images[current].classList.add('hidden');
+                    current = (current + 1) % images.length;
+                    images[current].classList.remove('hidden');
+                }, 2500);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', initProductSlideshows);
 
         function sendOrder() {
             const form = document.getElementById('order-form');

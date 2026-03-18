@@ -67,10 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <div id="particles-js"></div>
 
     <div class="login-card rounded-xl shadow-2xl p-6 sm:p-8 w-full max-w-sm sm:max-w-md relative z-10">
-        <div class="text-center mb-6 sm:mb-8">
-            <h1 class="text-2xl sm:text-3xl font-bold text-dark-blue mb-2">🍬 Dulcería QRM</h1>
-            <h2 class="text-lg sm:text-xl text-gray-600">Panel de Administración</h2>
-        </div>
+
 
         <?php if (isset($error)): ?>
             <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">

@@ -15,26 +15,68 @@ if (isset($_GET['logout'])) {
     exit;
 }
 
+// Manejar ordenar productos (drag & drop)
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['order'])) {
+    $order = explode(',', $_POST['order']);
+    $stmt = $db->prepare("UPDATE products SET position = ? WHERE id = ?");
+
+    foreach ($order as $index => $productId) {
+        $stmt->execute([$index + 1, $productId]);
+    }
+
+    header('Location: dashboard.php');
+    exit;
+}
+
 // Manejar agregar producto
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['image'])) {
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['name']) && isset($_FILES['images'])) {
     $name = $_POST['name'];
     $price = $_POST['price'];
     $tag = $_POST['tag'];
-    $image = $_FILES['image'];
 
-    if ($image['error'] == 0) {
-        $target_dir = "../uploads/";
-        $target_file = $target_dir . basename($image["name"]);
-        move_uploaded_file($image["tmp_name"], $target_file);
+    // Determinar la siguiente posición
+    $posStmt = $db->query("SELECT COALESCE(MAX(position), 0) + 1 FROM products");
+    $position = $posStmt->fetchColumn();
 
-        $stmt = $db->prepare("INSERT INTO products (name, price, image_path, tag) VALUES (?, ?, ?, ?)");
-        $stmt->execute([$name, $price, $target_file, $tag]);
+    $stmt = $db->prepare("INSERT INTO products (name, price, tag, position) VALUES (?, ?, ?, ?)");
+    $stmt->execute([$name, $price, $tag, $position]);
+    $productId = $db->lastInsertId();
+
+    // Guardar imágenes múltiples
+    $target_dir = "../uploads/";
+    $files = $_FILES['images'];
+    $imageStmt = $db->prepare("INSERT INTO product_images (product_id, image_path, position) VALUES (?, ?, ?)");
+    $posStmt = $db->prepare("SELECT COALESCE(MAX(position), 0) + 1 FROM product_images WHERE product_id = ?");
+
+    for ($i = 0; $i < count($files['name']); $i++) {
+        if ($files['error'][$i] === UPLOAD_ERR_OK) {
+            $filename = uniqid() . '_' . basename($files['name'][$i]);
+            $target_file = $target_dir . $filename;
+            move_uploaded_file($files['tmp_name'][$i], $target_file);
+
+            $posStmt->execute([$productId]);
+            $imgPos = $posStmt->fetchColumn();
+            $imageStmt->execute([$productId, $target_file, $imgPos]);
+        }
     }
+
+    header('Location: dashboard.php');
+    exit;
 }
 
 // Manejar eliminar producto
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['delete'])) {
     $id = $_POST['delete'];
+
+    // Eliminar imágenes asociadas (archivos + DB)
+    $imgStmt = $db->prepare("SELECT image_path FROM product_images WHERE product_id = ?");
+    $imgStmt->execute([$id]);
+    foreach ($imgStmt->fetchAll(PDO::FETCH_COLUMN) as $imgPath) {
+        if (file_exists($imgPath)) {
+            @unlink($imgPath);
+        }
+    }
+
     $stmt = $db->prepare("DELETE FROM products WHERE id = ?");
     $stmt->execute([$id]);
     header('Location: dashboard.php');
@@ -47,17 +89,42 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['edit'])) {
     $name = $_POST['edit_name'];
     $price = $_POST['edit_price'];
     $tag = $_POST['edit_tag'];
-    $image = $_FILES['edit_image'] ?? null;
 
     $update_fields = "name = ?, price = ?, tag = ?";
     $params = [$name, $price, $tag];
 
-    if ($image && $image['error'] == 0) {
+    // Eliminar imágenes marcadas para borrar
+    if (!empty($_POST['delete_images']) && is_array($_POST['delete_images'])) {
+        $deleteStmt = $db->prepare("SELECT image_path FROM product_images WHERE id = ? AND product_id = ?");
+        $delImgStmt = $db->prepare("DELETE FROM product_images WHERE id = ? AND product_id = ?");
+        foreach ($_POST['delete_images'] as $imgId) {
+            $deleteStmt->execute([$imgId, $id]);
+            $imgPath = $deleteStmt->fetchColumn();
+            if ($imgPath && file_exists($imgPath)) {
+                @unlink($imgPath);
+            }
+            $delImgStmt->execute([$imgId, $id]);
+        }
+    }
+
+    // Agregar nuevas imágenes si se cargaron
+    if (!empty($_FILES['edit_images']) && isset($_FILES['edit_images']['name'])) {
+        $files = $_FILES['edit_images'];
         $target_dir = "../uploads/";
-        $target_file = $target_dir . basename($image["name"]);
-        move_uploaded_file($image["tmp_name"], $target_file);
-        $update_fields .= ", image_path = ?";
-        $params[] = $target_file;
+        $posStmt = $db->prepare("SELECT COALESCE(MAX(position), 0) + 1 FROM product_images WHERE product_id = ?");
+        $imageInsert = $db->prepare("INSERT INTO product_images (product_id, image_path, position) VALUES (?, ?, ?)");
+
+        for ($i = 0; $i < count($files['name']); $i++) {
+            if ($files['error'][$i] === UPLOAD_ERR_OK) {
+                $filename = uniqid() . '_' . basename($files['name'][$i]);
+                $target_file = $target_dir . $filename;
+                move_uploaded_file($files['tmp_name'][$i], $target_file);
+
+                $posStmt->execute([$id]);
+                $imgPos = $posStmt->fetchColumn();
+                $imageInsert->execute([$id, $target_file, $imgPos]);
+            }
+        }
     }
 
     $params[] = $id;
@@ -67,9 +134,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['edit'])) {
     exit;
 }
 
-// Obtener productos
-$stmt = $db->query("SELECT * FROM products");
+// Obtener productos (ordenados por posición)
+$stmt = $db->query("SELECT * FROM products ORDER BY position ASC, id ASC");
 $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Cargar imágenes asociadas a los productos
+$imageStmt = $db->query("SELECT * FROM product_images ORDER BY product_id, position ASC");
+$images = $imageStmt->fetchAll(PDO::FETCH_ASSOC);
+$imagesByProduct = [];
+foreach ($images as $image) {
+    $imagesByProduct[$image['product_id']][] = $image;
+}
 ?>
 
 <!DOCTYPE html>
@@ -160,8 +235,8 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     </select>
                 </div>
                 <div>
-                    <label class="block text-gray-700 font-medium mb-2">Imagen</label>
-                    <input type="file" name="image" accept="image/*" class="input-field w-full px-4 py-3 border border-gray-300 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-sweet-blue file:text-white hover:file:bg-blue-600" required>
+                    <label class="block text-gray-700 font-medium mb-2">Imágenes (puedes subir varias)</label>
+                    <input type="file" name="images[]" accept="image/*" multiple class="input-field w-full px-4 py-3 border border-gray-300 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-sweet-blue file:text-white hover:file:bg-blue-600" required>
                 </div>
                 <div class="flex items-end">
                     <button type="submit" class="w-full bg-dark-blue text-white py-3 rounded-lg font-semibold hover:bg-blue-900 transition duration-300 shadow-lg">
@@ -174,6 +249,15 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <!-- Lista de Productos -->
         <div class="dashboard-card rounded-xl shadow-2xl p-8">
             <h2 class="text-2xl font-bold text-dark-blue mb-6 text-center">Productos Actuales</h2>
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
+                <p class="text-sm text-gray-600">Arrastra y suelta los productos para cambiar el orden en que aparecen en el catálogo.</p>
+                <form id="order-form" method="post" class="flex items-center gap-2">
+                    <input type="hidden" name="order" id="order-input">
+                    <button type="submit" class="bg-sweet-blue text-white px-4 py-2 rounded-full hover:bg-blue-600 transition duration-200 shadow">
+                        Guardar orden
+                    </button>
+                </form>
+            </div>
             <?php if (empty($products)): ?>
                 <p class="text-center text-gray-600">No hay productos aún. ¡Agrega el primero!</p>
             <?php else: ?>
@@ -190,10 +274,14 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         </thead>
                         <tbody>
                             <?php foreach ($products as $product): ?>
-                                <tr class="border-b hover:bg-gray-50">
+                                <tr class="border-b hover:bg-gray-50 draggable-row" draggable="true" data-product-id="<?php echo $product['id']; ?>" id="product-row-<?php echo $product['id']; ?>">
+                                    <?php
+                                        $imgs = $imagesByProduct[$product['id']] ?? [];
+                                        $firstImg = $imgs[0]['image_path'] ?? $product['image_path'];
+                                    ?>
                                     <td class="px-4 py-2">
-                                        <?php if ($product['image_path']): ?>
-                                            <img src="<?php echo $product['image_path']; ?>" alt="<?php echo $product['name']; ?>" class="w-16 h-16 object-cover rounded">
+                                        <?php if ($firstImg): ?>
+                                            <img src="<?php echo $firstImg; ?>" alt="<?php echo $product['name']; ?>" class="w-16 h-16 object-cover rounded">
                                         <?php else: ?>
                                             <span class="text-gray-500">Sin imagen</span>
                                         <?php endif; ?>
@@ -247,9 +335,26 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                     <option value="Oferta" <?php if($product['tag']=='Oferta') echo 'selected'; ?>>Oferta</option>
                                                 </select>
                                             </div>
+                                            <?php $editImages = $imagesByProduct[$product['id']] ?? []; ?>
+                                            <?php if (!empty($editImages)): ?>
+                                                <div class="md:col-span-4">
+                                                    <label class="block text-gray-700 font-medium mb-1">Imágenes actuales (marca para eliminar)</label>
+                                                    <div class="flex flex-wrap gap-2">
+                                                        <?php foreach ($editImages as $img): ?>
+                                                            <div class="w-20 h-20 relative border rounded overflow-hidden">
+                                                                <img src="<?php echo $img['image_path']; ?>" class="w-full h-full object-cover">
+                                                                <label class="absolute top-1 right-1 bg-white/80 rounded px-1 text-xs flex items-center gap-1">
+                                                                    <input type="checkbox" name="delete_images[]" value="<?php echo $img['id']; ?>">
+                                                                    Eliminar
+                                                                </label>
+                                                            </div>
+                                                        <?php endforeach; ?>
+                                                    </div>
+                                                </div>
+                                            <?php endif; ?>
                                             <div>
-                                                <label class="block text-gray-700 font-medium mb-1">Imagen (opcional)</label>
-                                                <input type="file" name="edit_image" accept="image/*" class="w-full px-3 py-2 border border-gray-300 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-sweet-blue file:text-white hover:file:bg-blue-600">
+                                                <label class="block text-gray-700 font-medium mb-1">Agregar nuevas imágenes</label>
+                                                <input type="file" name="edit_images[]" accept="image/*" multiple class="w-full px-3 py-2 border border-gray-300 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-sweet-blue file:text-white hover:file:bg-blue-600">
                                             </div>
                                             <div class="md:col-span-4 flex justify-end space-x-2 mt-4">
                                                 <button type="submit" name="edit" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition duration-300">Guardar Cambios</button>
@@ -283,6 +388,61 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 modes: { repulse: { distance: 100, duration: 0.4 }, push: { particles_nb: 4 } }
             },
             retina_detect: true
+        });
+
+        function updateOrderInput() {
+            const orderInput = document.getElementById('order-input');
+            const rows = document.querySelectorAll('tr.draggable-row');
+            const order = Array.from(rows).map(row => row.dataset.productId);
+            orderInput.value = order.join(',');
+        }
+
+        function setupDragOrder() {
+            const rows = document.querySelectorAll('tr.draggable-row');
+            let draggedRow = null;
+
+            rows.forEach(row => {
+                row.addEventListener('dragstart', (event) => {
+                    draggedRow = row;
+                    event.dataTransfer.effectAllowed = 'move';
+                    event.dataTransfer.setData('text/plain', row.dataset.productId);
+                    row.classList.add('opacity-50');
+                });
+
+                row.addEventListener('dragend', () => {
+                    if (draggedRow) {
+                        draggedRow.classList.remove('opacity-50');
+                        draggedRow = null;
+                    }
+                });
+
+                row.addEventListener('dragover', (event) => {
+                    event.preventDefault();
+                    row.classList.add('bg-blue-50');
+                });
+
+                row.addEventListener('dragleave', () => {
+                    row.classList.remove('bg-blue-50');
+                });
+
+                row.addEventListener('drop', (event) => {
+                    event.preventDefault();
+                    row.classList.remove('bg-blue-50');
+
+                    if (!draggedRow || draggedRow === row) return;
+
+                    const tbody = row.parentElement;
+                    tbody.insertBefore(draggedRow, row);
+
+                    updateOrderInput();
+                });
+            });
+
+            updateOrderInput();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            setupDragOrder();
         });
 
         function toggleEdit(id) {

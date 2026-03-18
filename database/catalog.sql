@@ -12,8 +12,17 @@ CREATE TABLE IF NOT EXISTS products (
     name VARCHAR(255) NOT NULL,
     price DECIMAL(10,2) NOT NULL,
     image_path VARCHAR(255),
-    tag VARCHAR(50) DEFAULT 'Nuevo'
+    tag VARCHAR(50) DEFAULT 'Nuevo',
+    position INT DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS product_images (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    product_id INT NOT NULL,
+    image_path VARCHAR(255) NOT NULL,
+    position INT DEFAULT 0,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 );
 
 -- Insertar usuario admin por defecto
-INSERT IGNORE INTO users (username, password) VALUES ('admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi'); -- password: admin123
+INSERT IGNORE INTO users (username, password) VALUES ('Quiromar', '$2y$10$b4pEpfl6HeZn.D4oRXdU0OCSKhWCg3N1lKnQ0EprZYvn2vhsw2c6C');

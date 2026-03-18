@@ -28,4 +28,36 @@ if ($result->rowCount() == 0) {
     $sql = file_get_contents('catalog.sql');
     $db->exec($sql);
 }
+
+// Ejecutar script de migraciones (agrega columnas/tablas nuevas sin afectar datos existentes)
+if (file_exists('migration.sql')) {
+    try {
+        $migrationSql = file_get_contents('migration.sql');
+        $db->exec($migrationSql);
+    } catch (PDOException $e) {
+        // No detener la aplicación si la migración ya está aplicada o falla por permisos.
+    }
+}
+
+// Asegurar que las columnas/tablas mínimas existan (compatibilidad con MySQL antiguas)
+try {
+    $colRes = $db->query("SHOW COLUMNS FROM products LIKE 'position'");
+    if ($colRes && $colRes->rowCount() === 0) {
+        $db->exec("ALTER TABLE products ADD COLUMN position INT DEFAULT 0");
+        $db->exec("UPDATE products SET position = id WHERE position = 0");
+    }
+
+    $tblRes = $db->query("SHOW TABLES LIKE 'product_images'");
+    if ($tblRes && $tblRes->rowCount() === 0) {
+        $db->exec("CREATE TABLE product_images (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            product_id INT NOT NULL,
+            image_path VARCHAR(255) NOT NULL,
+            position INT DEFAULT 0,
+            FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+        )");
+    }
+} catch (PDOException $e) {
+    // Ignorar errores de migración, el app seguirá funcionando con la estructura actual.
+}
 ?>
