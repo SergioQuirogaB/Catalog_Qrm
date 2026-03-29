@@ -128,13 +128,15 @@ foreach ($images as $img) {
 
                             <div class="absolute top-2 right-2 <?php 
                                 $tagColors = [
-                                    'Nuevo' => 'bg-lime-400 text-black',
-                                    'Agotado' => 'bg-orange-500 text-white',
-                                    'Tendencia' => 'bg-pink-500 text-white',
-                                    'Más vendido' => 'bg-cyan-400 text-black',
-                                    'Oferta' => 'bg-yellow-400 text-black'
+                                    'NUEVO' => 'bg-orange-500 text-white',
+                                    'DISPONIBLE' => 'bg-lime-400 text-white',
+                                    'AGOTADO' => 'bg-red-500 text-white',
+                                    'BAJAS CANTIDADES' => 'bg-yellow-400 text-black',
+                                    'BAJO DE PRECIO' => 'bg-amber-400 text-black',
+                                    'MÁS VENDIDO' => 'bg-fuchsia-600 text-white'
                                 ];
-                                echo $tagColors[$product['tag']] ?? 'bg-gray-500 text-white';
+                                $tagKey = strtoupper(trim($product['tag']));
+                                echo $tagColors[$tagKey] ?? 'bg-gray-500 text-white';
                             ?> px-2 py-1 rounded-full text-xs font-bold shadow-lg">
                                 <?php echo $product['tag']; ?>
                             </div>

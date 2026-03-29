@@ -81,7 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['delete'])) {
 }
 
 // Manejar editar producto
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['edit'])) {
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['edit_id'])) {
     $id = $_POST['edit_id'];
     $name = $_POST['edit_name'];
     $price = $_POST['edit_price'];
@@ -246,12 +246,12 @@ $successType = $_GET['success'] ?? '';
                 <div>
                     <label class="block text-gray-700 font-medium mb-2">Etiqueta</label>
                     <select name="tag" class="input-field w-full px-4 py-3 border border-gray-300 rounded-lg">
-                        <option value="Nuevo">Nuevo</option>
-                        <option value="Clásico">Clásico</option>
-                        <option value="Agotado">Agotado</option>
-                        <option value="Tendencia">Tendencia</option>
-                        <option value="Más vendido">Más vendido</option>
-                        <option value="Oferta">Oferta</option>
+                        <option value="NUEVO">NUEVO</option>
+                        <option value="DISPONIBLE">DISPONIBLE</option>
+                        <option value="AGOTADO">AGOTADO</option>
+                        <option value="BAJAS CANTIDADES">BAJAS CANTIDADES</option>
+                        <option value="BAJO DE PRECIO">BAJO DE PRECIO</option>
+                        <option value="MÁS VENDIDO">MÁS VENDIDO</option>
                     </select>
                 </div>
                 <div>
@@ -314,13 +314,14 @@ $successType = $_GET['success'] ?? '';
                                     <td class="px-4 py-2">
                                         <span class="px-2 py-1 rounded-full text-xs font-semibold 
                                             <?php 
-                                            switch($product['tag']) {
-                                                case 'Nuevo': echo 'bg-green-100 text-green-800'; break;
-                                                case 'Clásico': echo 'bg-amber-100 text-amber-800'; break;
-                                                case 'Agotado': echo 'bg-red-100 text-red-800'; break;
-                                                case 'Tendencia': echo 'bg-purple-100 text-purple-800'; break;
-                                                case 'Más vendido': echo 'bg-blue-100 text-blue-800'; break;
-                                                case 'Oferta': echo 'bg-yellow-100 text-yellow-800'; break;
+                                            $tagKey = strtoupper(trim($product['tag']));
+                                            switch($tagKey) {
+                                                case 'NUEVO': echo 'bg-orange-100 text-orange-800'; break;
+                                                case 'DISPONIBLE': echo 'bg-lime-100 text-lime-800'; break;
+                                                case 'AGOTADO': echo 'bg-red-100 text-red-800'; break;
+                                                case 'BAJAS CANTIDADES': echo 'bg-yellow-100 text-yellow-800'; break;
+                                                case 'BAJO DE PRECIO': echo 'bg-amber-100 text-amber-800'; break;
+                                                case 'MÁS VENDIDO': echo 'bg-fuchsia-100 text-fuchsia-800'; break;
                                                 default: echo 'bg-gray-100 text-gray-800';
                                             }
                                             ?>">
@@ -360,12 +361,12 @@ $successType = $_GET['success'] ?? '';
                                             <div>
                                                 <label class="block text-gray-700 font-medium mb-1">Etiqueta</label>
                                                 <select name="edit_tag" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-sweet-blue">
-                                                    <option value="Nuevo" <?php if($product['tag']=='Nuevo') echo 'selected'; ?>>Nuevo</option>
-                                                    <option value="Clásico" <?php if($product['tag']=='Clásico') echo 'selected'; ?>>Clásico</option>
-                                                    <option value="Agotado" <?php if($product['tag']=='Agotado') echo 'selected'; ?>>Agotado</option>
-                                                    <option value="Tendencia" <?php if($product['tag']=='Tendencia') echo 'selected'; ?>>Tendencia</option>
-                                                    <option value="Más vendido" <?php if($product['tag']=='Más vendido') echo 'selected'; ?>>Más vendido</option>
-                                                    <option value="Oferta" <?php if($product['tag']=='Oferta') echo 'selected'; ?>>Oferta</option>
+                                                    <option value="NUEVO" <?php if($product['tag']=='NUEVO') echo 'selected'; ?>>NUEVO</option>
+                                                    <option value="DISPONIBLE" <?php if($product['tag']=='DISPONIBLE') echo 'selected'; ?>>DISPONIBLE</option>
+                                                    <option value="AGOTADO" <?php if($product['tag']=='AGOTADO') echo 'selected'; ?>>AGOTADO</option>
+                                                    <option value="BAJAS CANTIDADES" <?php if($product['tag']=='BAJAS CANTIDADES') echo 'selected'; ?>>BAJAS CANTIDADES</option>
+                                                    <option value="BAJO DE PRECIO" <?php if($product['tag']=='BAJO DE PRECIO') echo 'selected'; ?>>BAJO DE PRECIO</option>
+                                                    <option value="MÁS VENDIDO" <?php if($product['tag']=='MÁS VENDIDO') echo 'selected'; ?>>MÁS VENDIDO</option>
                                                 </select>
                                             </div>
                                             <?php $editImages = $imagesByProduct[$product['id']] ?? []; ?>
