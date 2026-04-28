@@ -204,6 +204,84 @@ $successType = $_GET['success'] ?? '';
             padding-top: 2rem;
             padding-bottom: 2rem;
         }
+
+        /* Etiquetas (mismas que el catálogo — colores vivos dulcería) */
+        .catalog-tag {
+            display: inline-block;
+            padding: 0.35rem 0.55rem;
+            border-radius: 9999px;
+            font-size: 0.7rem;
+            font-weight: 900;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            border: 2px solid #fff;
+            line-height: 1.15;
+            box-shadow:
+                0 3px 0 rgba(0, 0, 0, 0.28),
+                0 8px 18px rgba(0, 0, 0, 0.35);
+        }
+        .catalog-tag--nuevo {
+            background: linear-gradient(145deg, #ff5722 0%, #e91e8c 50%, #ff9100 100%);
+            color: #fff;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+            box-shadow:
+                0 3px 0 #8b1450,
+                0 8px 22px rgba(233, 30, 140, 0.65),
+                0 0 20px rgba(255, 145, 0, 0.45);
+        }
+        .catalog-tag--disponible {
+            background: linear-gradient(145deg, #00c853 0%, #b2ff59 100%);
+            color: #0d260d;
+            text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+            border-color: #e8f5e9;
+            box-shadow:
+                0 3px 0 #1b5e20,
+                0 8px 22px rgba(0, 200, 83, 0.55),
+                0 0 18px rgba(178, 255, 89, 0.4);
+        }
+        .catalog-tag--agotado {
+            background: linear-gradient(145deg, #ff1744 0%, #b71c1c 100%);
+            color: #fff;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+            border-color: #ffcdd2;
+            box-shadow:
+                0 3px 0 #3e0000,
+                0 8px 24px rgba(255, 23, 68, 0.6),
+                0 0 16px rgba(183, 28, 28, 0.45);
+        }
+        .catalog-tag--bajas {
+            background: linear-gradient(145deg, #ffea00 0%, #ffab00 100%);
+            color: #1a1000;
+            border-color: #fffde7;
+            box-shadow:
+                0 3px 0 #b8860b,
+                0 8px 22px rgba(255, 171, 0, 0.65),
+                0 0 18px rgba(255, 234, 0, 0.5);
+        }
+        .catalog-tag--precio {
+            background: linear-gradient(145deg, #ffd600 0%, #ff6d00 100%);
+            color: #1a0800;
+            border-color: #fff8e1;
+            box-shadow:
+                0 3px 0 #bf360c,
+                0 8px 22px rgba(255, 109, 0, 0.55),
+                0 0 16px rgba(255, 214, 0, 0.45);
+        }
+        .catalog-tag--vendido {
+            background: linear-gradient(145deg, #e040fb 0%, #651fff 100%);
+            color: #fff;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+            border-color: #f3e5f5;
+            box-shadow:
+                0 3px 0 #311b92,
+                0 8px 26px rgba(224, 64, 251, 0.55),
+                0 0 20px rgba(101, 31, 255, 0.45);
+        }
+        .catalog-tag--default {
+            background: linear-gradient(145deg, #607d8b 0%, #263238 100%);
+            color: #fff;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+        }
     </style>
 </head>
 <body class="bg-white min-h-screen relative">
@@ -312,19 +390,18 @@ $successType = $_GET['success'] ?? '';
                                     <td class="px-4 py-2 font-medium"><?php echo $product['name']; ?></td>
                                     <td class="px-4 py-2">$<?php echo number_format($product['price'], ($product['price'] == intval($product['price'])) ? 0 : 2, ',', '.'); ?></td>
                                     <td class="px-4 py-2">
-                                        <span class="px-2 py-1 rounded-full text-xs font-semibold 
-                                            <?php 
+                                        <span class="catalog-tag <?php
                                             $tagKey = strtoupper(trim($product['tag']));
-                                            switch($tagKey) {
-                                                case 'NUEVO': echo 'bg-orange-100 text-orange-800'; break;
-                                                case 'DISPONIBLE': echo 'bg-lime-100 text-lime-800'; break;
-                                                case 'AGOTADO': echo 'bg-red-100 text-red-800'; break;
-                                                case 'BAJAS CANTIDADES': echo 'bg-yellow-100 text-yellow-800'; break;
-                                                case 'BAJO DE PRECIO': echo 'bg-amber-100 text-amber-800'; break;
-                                                case 'MÁS VENDIDO': echo 'bg-fuchsia-100 text-fuchsia-800'; break;
-                                                default: echo 'bg-gray-100 text-gray-800';
-                                            }
-                                            ?>">
+                                            $tagClass = [
+                                                'NUEVO' => 'catalog-tag--nuevo',
+                                                'DISPONIBLE' => 'catalog-tag--disponible',
+                                                'AGOTADO' => 'catalog-tag--agotado',
+                                                'BAJAS CANTIDADES' => 'catalog-tag--bajas',
+                                                'BAJO DE PRECIO' => 'catalog-tag--precio',
+                                                'MÁS VENDIDO' => 'catalog-tag--vendido',
+                                            ];
+                                            echo $tagClass[$tagKey] ?? 'catalog-tag--default';
+                                        ?>">
                                             <?php echo $product['tag']; ?>
                                         </span>
                                     </td>

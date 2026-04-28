@@ -75,6 +75,106 @@ foreach ($images as $img) {
             letter-spacing: 0.05em;
             text-shadow: 3px 3px 0px rgba(0,0,0,0.3), 6px 6px 0px rgba(0,0,0,0.2), 9px 9px 0px rgba(0,0,0,0.1), 12px 12px 20px rgba(0,0,0,0.4);
         }
+        /* Producto agotado: imagen en blanco y negro + leve apagado para que se note sin leer la etiqueta */
+        .product-image-area--agotado img {
+            filter: grayscale(100%);
+            opacity: 0.78;
+        }
+        .product-image-area--agotado::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+            background: linear-gradient(180deg, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.22) 100%);
+            border-radius: 0.75rem 0.75rem 0 0;
+        }
+        .product-card--agotado {
+            opacity: 0.92;
+        }
+        /* Etiquetas de producto — colores muy vivos estilo dulcería */
+        .catalog-tag {
+            display: inline-block;
+            padding: 0.35rem 0.55rem;
+            border-radius: 9999px;
+            font-size: 0.625rem;
+            font-weight: 900;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+            border: 2px solid #fff;
+            line-height: 1.15;
+            box-shadow:
+                0 3px 0 rgba(0, 0, 0, 0.28),
+                0 8px 18px rgba(0, 0, 0, 0.35);
+        }
+        @media (min-width: 480px) {
+            .catalog-tag {
+                font-size: 0.7rem;
+                padding: 0.4rem 0.65rem;
+            }
+        }
+        .catalog-tag--nuevo {
+            background: linear-gradient(145deg, #ff5722 0%, #e91e8c 50%, #ff9100 100%);
+            color: #fff;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+            box-shadow:
+                0 3px 0 #8b1450,
+                0 8px 22px rgba(233, 30, 140, 0.65),
+                0 0 20px rgba(255, 145, 0, 0.45);
+        }
+        .catalog-tag--disponible {
+            background: linear-gradient(145deg, #00c853 0%, #b2ff59 100%);
+            color: #0d260d;
+            text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+            border-color: #e8f5e9;
+            box-shadow:
+                0 3px 0 #1b5e20,
+                0 8px 22px rgba(0, 200, 83, 0.55),
+                0 0 18px rgba(178, 255, 89, 0.4);
+        }
+        .catalog-tag--agotado {
+            background: linear-gradient(145deg, #ff1744 0%, #b71c1c 100%);
+            color: #fff;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+            border-color: #ffcdd2;
+            box-shadow:
+                0 3px 0 #3e0000,
+                0 8px 24px rgba(255, 23, 68, 0.6),
+                0 0 16px rgba(183, 28, 28, 0.45);
+        }
+        .catalog-tag--bajas {
+            background: linear-gradient(145deg, #ffea00 0%, #ffab00 100%);
+            color: #1a1000;
+            border-color: #fffde7;
+            box-shadow:
+                0 3px 0 #b8860b,
+                0 8px 22px rgba(255, 171, 0, 0.65),
+                0 0 18px rgba(255, 234, 0, 0.5);
+        }
+        .catalog-tag--precio {
+            background: linear-gradient(145deg, #ffd600 0%, #ff6d00 100%);
+            color: #1a0800;
+            border-color: #fff8e1;
+            box-shadow:
+                0 3px 0 #bf360c,
+                0 8px 22px rgba(255, 109, 0, 0.55),
+                0 0 16px rgba(255, 214, 0, 0.45);
+        }
+        .catalog-tag--vendido {
+            background: linear-gradient(145deg, #e040fb 0%, #651fff 100%);
+            color: #fff;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+            border-color: #f3e5f5;
+            box-shadow:
+                0 3px 0 #311b92,
+                0 8px 26px rgba(224, 64, 251, 0.55),
+                0 0 20px rgba(101, 31, 255, 0.45);
+        }
+        .catalog-tag--default {
+            background: linear-gradient(145deg, #607d8b 0%, #263238 100%);
+            color: #fff;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+        }
     </style>
 </head>
 <body class="font-rounded">
@@ -103,9 +203,11 @@ foreach ($images as $img) {
 
         <form id="order-form">
             <div class="products-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6" id="productsGrid">
-                <?php foreach ($products as $product): ?>
-                    <div class="product-card bg-white rounded-xl shadow-lg overflow-hidden border-2 border-sweet-blue hover:border-dark-blue">
-                        <div class="h-80 sm:h-64 bg-white flex items-center justify-center relative overflow-hidden">
+                <?php foreach ($products as $product):
+                    $isAgotado = strtoupper(trim($product['tag'] ?? '')) === 'AGOTADO';
+                ?>
+                    <div class="product-card bg-white rounded-xl shadow-lg overflow-hidden border-2 border-sweet-blue hover:border-dark-blue <?php echo $isAgotado ? 'product-card--agotado' : ''; ?>">
+                        <div class="h-80 sm:h-64 bg-white flex items-center justify-center relative overflow-hidden <?php echo $isAgotado ? 'product-image-area--agotado' : ''; ?>">
                             <?php
                                 $productImages = $imagesByProduct[$product['id']] ?? [];
                                 $firstImage = $productImages[0]['image_path'] ?? $product['image_path'];
@@ -126,18 +228,18 @@ foreach ($images as $img) {
                                 </div>
                             <?php endif; ?>
 
-                            <div class="absolute top-2 right-2 <?php 
-                                $tagColors = [
-                                    'NUEVO' => 'bg-orange-500 text-white',
-                                    'DISPONIBLE' => 'bg-lime-400 text-white',
-                                    'AGOTADO' => 'bg-red-500 text-white',
-                                    'BAJAS CANTIDADES' => 'bg-yellow-400 text-black',
-                                    'BAJO DE PRECIO' => 'bg-amber-400 text-black',
-                                    'MÁS VENDIDO' => 'bg-fuchsia-600 text-white'
+                            <div class="catalog-tag absolute top-2 right-2 z-10 <?php
+                                $tagClass = [
+                                    'NUEVO' => 'catalog-tag--nuevo',
+                                    'DISPONIBLE' => 'catalog-tag--disponible',
+                                    'AGOTADO' => 'catalog-tag--agotado',
+                                    'BAJAS CANTIDADES' => 'catalog-tag--bajas',
+                                    'BAJO DE PRECIO' => 'catalog-tag--precio',
+                                    'MÁS VENDIDO' => 'catalog-tag--vendido',
                                 ];
                                 $tagKey = strtoupper(trim($product['tag']));
-                                echo $tagColors[$tagKey] ?? 'bg-gray-500 text-white';
-                            ?> px-2 py-1 rounded-full text-xs font-bold shadow-lg">
+                                echo $tagClass[$tagKey] ?? 'catalog-tag--default';
+                            ?>">
                                 <?php echo $product['tag']; ?>
                             </div>
                         </div>
@@ -146,7 +248,11 @@ foreach ($images as $img) {
                             <p class="text-2xl font-bold text-dark-blue mb-2 text-center">$<?php echo number_format($product['price'], ($product['price'] == intval($product['price'])) ? 0 : 2, ',', '.'); ?></p>
                             <div class="flex items-center justify-between mb-2">
                                 <label class="text-gray-700 font-medium text-sm">Cantidad:</label>
-                                <input type="number" name="quantity[<?php echo $product['id']; ?>]" min="0" value="0" class="quantity-input w-16 border border-gray-300 rounded px-2 py-1 text-center">
+                                <?php if ($isAgotado): ?>
+                                    <span class="text-sm font-semibold text-red-600">Sin stock</span>
+                                <?php else: ?>
+                                    <input type="number" name="quantity[<?php echo $product['id']; ?>]" min="0" value="0" class="quantity-input w-16 border border-gray-300 rounded px-2 py-1 text-center">
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>

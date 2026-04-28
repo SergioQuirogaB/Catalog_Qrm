@@ -1,13 +1,14 @@
 <?php
 // config.php - Configuración de la base de datos MySQL
 $host = 'localhost';
+$port = 3307; // Puerto MySQL/MariaDB (por defecto 3306)
 $dbname = 'catalogo_qrm';
 $user = 'root';
 $password = ''; // Cambia si tienes contraseña
 
 try {
     // Conectar sin DB para crear si no existe
-    $db_temp = new PDO("mysql:host=$host;charset=utf8", $user, $password);
+    $db_temp = new PDO("mysql:host=$host;port=$port;charset=utf8", $user, $password);
     $db_temp->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $db_temp->exec("CREATE DATABASE IF NOT EXISTS `$dbname`");
 } catch (PDOException $e) {
@@ -15,7 +16,7 @@ try {
 }
 
 try {
-    $db = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $user, $password);
+    $db = new PDO("mysql:host=$host;port=$port;dbname=$dbname;charset=utf8", $user, $password);
     $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch (PDOException $e) {
     die("Error de conexión: " . $e->getMessage());
