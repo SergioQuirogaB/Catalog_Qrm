@@ -12,6 +12,27 @@ $imagesByProduct = [];
 foreach ($images as $img) {
     $imagesByProduct[$img['product_id']][] = $img;
 }
+
+// Etiquetas disponibles para filtrar en el catálogo
+$tagOrder = ['NUEVO', 'DISPONIBLE', 'BAJAS CANTIDADES', 'BAJO DE PRECIO', 'MÁS VENDIDO', 'AGOTADO'];
+$availableTags = [];
+foreach ($products as $product) {
+    $tag = trim((string)($product['tag'] ?? ''));
+    if ($tag !== '' && !in_array($tag, $availableTags, true)) {
+        $availableTags[] = $tag;
+    }
+}
+
+$availableTags = array_values(array_filter($availableTags, fn($tag) => in_array(strtoupper($tag), $tagOrder, true)));
+$orderedAvailableTags = [];
+foreach ($tagOrder as $tagName) {
+    foreach ($availableTags as $tagValue) {
+        if (strtoupper(trim((string)$tagValue)) === $tagName) {
+            $orderedAvailableTags[] = $tagValue;
+        }
+    }
+}
+$availableTags = $orderedAvailableTags;
 ?>
 
 <!DOCTYPE html>
@@ -175,12 +196,28 @@ foreach ($images as $img) {
             color: #fff;
             text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
         }
+        .filter-btn {
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+        .filter-btn.is-active {
+            background: linear-gradient(135deg, #00BFFF, #1e3a8a);
+            color: white;
+            border-color: #1e3a8a;
+            box-shadow: 0 8px 20px rgba(0, 191, 255, 0.25);
+        }
+        .footer-contact a {
+            transition: all 0.2s ease;
+        }
+        .footer-contact a:hover {
+            transform: translateY(-1px);
+        }
     </style>
 </head>
 <body class="font-rounded">
     <!-- Admin Link -->
     <div class="fixed top-4 right-4 z-50">
-        <a href="admin/login.php" class="bg-sweet-blue text-white px-4 py-2 rounded-full hover:bg-blue-600 transition duration-300 text-sm shadow-lg">Admin</a>
+        <a href="admin/login.php" class="bg-sweet-blue text-white w-12 h-12 flex items-center justify-center rounded-full hover:bg-blue-600 transition duration-300 text-xl shadow-lg" title="Admin">🐻‍❄️</a>
     </div>
 
     <div class="top-accent"></div>
@@ -197,16 +234,36 @@ foreach ($images as $img) {
             <p class="text-gray-600">Ofrecemos dulces y snacks perfectos para complementar la oferta de tu colegio con calidad, variedad y excelentes precios.</p>
         </div> -->
 
-        <div class="product-count text-center mb-8">
+        <div class="product-count text-center mb-6">
             <p class="text-gray-600" style="font-family: 'Fredoka', sans-serif; font-size: 1.1rem;">Mostrando <span id="productCounter" class="font-serif text-lg text-blue-700" style="font-family: 'Fredoka', sans-serif; font-weight: 600;"><?php echo count($products); ?></span> productos disponibles</p>
+        </div>
+
+        <div class="mb-8">
+            <div class="hidden sm:flex flex-wrap justify-center gap-3">
+                <button type="button" class="filter-btn is-active rounded-full px-4 py-2 text-sm font-semibold bg-white text-dark-blue border border-blue-200 shadow-sm" data-tag="TODOS">Todos</button>
+                <?php foreach ($availableTags as $tag): ?>
+                    <button type="button" class="filter-btn rounded-full px-4 py-2 text-sm font-semibold bg-white text-gray-700 border border-gray-200 shadow-sm" data-tag="<?php echo strtoupper(trim($tag)); ?>"><?php echo strtoupper(trim($tag)); ?></button>
+                <?php endforeach; ?>
+            </div>
+
+            <div class="sm:hidden">
+                <label for="mobileFilterSelect" class="block text-sm font-semibold text-gray-700 mb-2 text-center">Filtrar por etiqueta</label>
+                <select id="mobileFilterSelect" class="w-full max-w-md mx-auto rounded-xl border border-blue-200 bg-white px-4 py-3 text-gray-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-400">
+                    <option value="TODOS">Todos</option>
+                    <?php foreach ($availableTags as $tag): ?>
+                        <option value="<?php echo strtoupper(trim($tag)); ?>"><?php echo strtoupper(trim($tag)); ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
         </div>
 
         <form id="order-form">
             <div class="products-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6" id="productsGrid">
                 <?php foreach ($products as $product):
                     $isAgotado = strtoupper(trim($product['tag'] ?? '')) === 'AGOTADO';
+                    $tagValue = strtoupper(trim((string)($product['tag'] ?? '')));
                 ?>
-                    <div class="product-card bg-white rounded-xl shadow-lg overflow-hidden border-2 border-sweet-blue hover:border-dark-blue <?php echo $isAgotado ? 'product-card--agotado' : ''; ?>">
+                    <div class="product-card bg-white rounded-xl shadow-lg overflow-hidden border-2 border-sweet-blue hover:border-dark-blue <?php echo $isAgotado ? 'product-card--agotado' : ''; ?>" data-tag="<?php echo $tagValue; ?>">
                         <div class="h-80 sm:h-64 bg-white flex items-center justify-center relative overflow-hidden <?php echo $isAgotado ? 'product-image-area--agotado' : ''; ?>">
                             <?php
                                 $productImages = $imagesByProduct[$product['id']] ?? [];
@@ -271,11 +328,29 @@ foreach ($images as $img) {
                 <p>¡Pronto tendremos productos deliciosos para ti! 🍭</p>
             </div>
         <?php endif; ?>
+
+        <div id="emptyState" class="hidden text-center text-gray-600 text-xl mt-8">
+            <p>No hay productos en esta etiqueta por el momento. 🍬</p>
+        </div>
     </main>
 
-    <footer class="bg-white py-6 mt-12 border-t">
-        <div class="max-w-6xl mx-auto px-6 text-center">
-            <p class="text-gray-600">© 2026 Dulcería Quiromar.</p>
+    <footer class="bg-gradient-to-r from-slate-900 to-blue-900 text-white py-10 mt-12">
+        <div class="max-w-6xl mx-auto px-6 text-center md:text-left md:flex md:items-center md:justify-between gap-6">
+            <div>
+                <p class="text-xl font-bold mb-2">Dulcería Quiromar</p>
+                <p class="text-blue-100">Encuentra tus dulces favoritos y haz tu pedido rápido.</p>
+            </div>
+
+            <div class="footer-contact mt-4 md:mt-0 flex flex-col md:items-end gap-2">
+                <a href="https://wa.me/573133813154?text=Hola%20Dulcer%C3%ADa%20Quiromar%2C%20quiero%20hacer%20un%20pedido" target="_blank" rel="noopener" class="inline-flex items-center justify-center gap-2 bg-green-500 hover:bg-green-400 text-white px-4 py-2 rounded-full font-semibold shadow-lg">
+                    <span>📲</span>
+                    <span>313 381 3154</span>
+                </a>
+                <a href="tel:+573133813154" class="inline-flex items-center justify-center gap-2 text-blue-100 hover:text-white font-medium">
+                    <span>📞</span>
+                    <span>Llamar ahora</span>
+                </a>
+            </div>
         </div>
     </footer>
 
@@ -315,7 +390,53 @@ foreach ($images as $img) {
             });
         }
 
-        document.addEventListener('DOMContentLoaded', initProductSlideshows);
+        document.addEventListener('DOMContentLoaded', () => {
+            initProductSlideshows();
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            const mobileFilterSelect = document.getElementById('mobileFilterSelect');
+            const productCards = document.querySelectorAll('.product-card');
+            const productCounter = document.getElementById('productCounter');
+            const emptyState = document.getElementById('emptyState');
+
+            function updateFilters(selectedTag) {
+                let visibleCount = 0;
+                productCards.forEach(card => {
+                    const shouldShow = selectedTag === 'TODOS' || (card.dataset.tag || '').toUpperCase() === selectedTag;
+                    card.style.display = shouldShow ? '' : 'none';
+                    if (shouldShow) visibleCount++;
+                });
+
+                productCounter.textContent = visibleCount;
+                emptyState.classList.toggle('hidden', visibleCount !== 0);
+
+                filterButtons.forEach(button => {
+                    const isActive = button.dataset.tag === selectedTag;
+                    button.classList.toggle('is-active', isActive);
+                    button.classList.toggle('text-dark-blue', isActive);
+                    button.classList.toggle('border-blue-200', isActive);
+                    button.classList.toggle('text-gray-700', !isActive);
+                    button.classList.toggle('border-gray-200', !isActive);
+                });
+
+                if (mobileFilterSelect) {
+                    mobileFilterSelect.value = selectedTag;
+                }
+            }
+
+            filterButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    updateFilters(button.dataset.tag || 'TODOS');
+                });
+            });
+
+            if (mobileFilterSelect) {
+                mobileFilterSelect.addEventListener('change', (event) => {
+                    updateFilters(event.target.value || 'TODOS');
+                });
+            }
+
+            updateFilters('TODOS');
+        });
 
         function sendOrder() {
             const form = document.getElementById('order-form');
