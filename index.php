@@ -1,9 +1,5 @@
 <?php
-session_start();
 require 'config.php';
-
-$requestedMode = isset($_GET['view']) && $_GET['view'] === 'wholesale' ? 'wholesale' : null;
-$catalogPriceMode = $requestedMode ?? ($_SESSION['catalog_price_mode'] ?? 'current');
 
 // Obtener productos en el orden configurado
 $stmt = $db->query("SELECT * FROM products ORDER BY position ASC, id ASC");
@@ -216,27 +212,6 @@ $availableTags = $orderedAvailableTags;
         .footer-contact a:hover {
             transform: translateY(-1px);
         }
-        .secret-price-toggle {
-            border: none;
-            background: rgba(255, 255, 255, 0.12);
-            color: rgba(255, 255, 255, 0.7);
-            width: 28px;
-            height: 28px;
-            border-radius: 9999px;
-            opacity: 0.35;
-            cursor: pointer;
-            padding: 0;
-            margin-left: 8px;
-            transition: opacity 0.2s ease, transform 0.2s ease;
-            font-size: 14px;
-            line-height: 1;
-        }
-        .secret-price-toggle:hover,
-        .secret-price-toggle:focus {
-            opacity: 1;
-            transform: scale(1.05);
-            outline: none;
-        }
     </style>
 </head>
 <body class="font-rounded">
@@ -327,19 +302,7 @@ $availableTags = $orderedAvailableTags;
                         </div>
                         <div class="p-3 bg-white">
                             <h3 class="text-lg font-bold text-gray-800 mb-1 text-center"><?php echo $product['name']; ?></h3>
-                            <?php
-                                $currentPrice = (float) $product['price'];
-                                $wholesalePrice = isset($product['wholesale_price']) && $product['wholesale_price'] !== null && $product['wholesale_price'] !== '' ? (float) $product['wholesale_price'] : $currentPrice;
-                                $displayModeIsWholesale = $catalogPriceMode === 'wholesale';
-                                $displayPrice = $displayModeIsWholesale ? $wholesalePrice : $currentPrice;
-                                $displayLabel = $displayModeIsWholesale ? 'Precio mayorista' : 'Precio actual';
-                            ?>
-                            <div class="price-block" data-current-price="<?php echo number_format($currentPrice, 2, '.', ''); ?>" data-wholesale-price="<?php echo number_format($wholesalePrice, 2, '.', ''); ?>">
-                                <p class="price-label text-xs uppercase tracking-wide text-gray-500 mb-1 text-center" style="display: <?php echo $displayModeIsWholesale ? 'none' : 'block'; ?>;">Precio actual</p>
-                                <p class="price-amount price-amount--current text-2xl font-bold text-dark-blue mb-2 text-center" style="display: <?php echo $displayModeIsWholesale ? 'none' : 'block'; ?>;">$<?php echo number_format($currentPrice, ($currentPrice == intval($currentPrice)) ? 0 : 2, ',', '.'); ?></p>
-                                <p class="price-label text-xs uppercase tracking-wide text-gray-500 mb-1 text-center" style="display: <?php echo $displayModeIsWholesale ? 'block' : 'none'; ?>;">Precio mayorista</p>
-                                <p class="price-amount price-amount--wholesale text-xl font-bold text-green-700 mb-2 text-center" style="display: <?php echo $displayModeIsWholesale ? 'block' : 'none'; ?>;">$<?php echo number_format($displayPrice, ($displayPrice == intval($displayPrice)) ? 0 : 2, ',', '.'); ?></p>
-                            </div>
+                            <p class="text-2xl font-bold text-dark-blue mb-2 text-center">$<?php echo number_format($product['price'], ($product['price'] == intval($product['price'])) ? 0 : 2, ',', '.'); ?></p>
                             <div class="flex items-center justify-between mb-2">
                                 <label class="text-gray-700 font-medium text-sm">Cantidad:</label>
                                 <?php if ($isAgotado): ?>
@@ -387,7 +350,6 @@ $availableTags = $orderedAvailableTags;
                     <span>📞</span>
                     <span>Llamar ahora</span>
                 </a>
-                <button type="button" id="secret-price-toggle" class="secret-price-toggle" aria-label="Cambiar precio" title="Cambiar precio">🐻‍❄️</button>
             </div>
         </div>
     </footer>
@@ -435,37 +397,6 @@ $availableTags = $orderedAvailableTags;
             const productCards = document.querySelectorAll('.product-card');
             const productCounter = document.getElementById('productCounter');
             const emptyState = document.getElementById('emptyState');
-            const secretToggle = document.getElementById('secret-price-toggle');
-
-            function setPriceMode(mode) {
-                const safeMode = mode === 'wholesale' ? 'wholesale' : 'current';
-                localStorage.setItem('catalogPriceMode', safeMode);
-
-                const url = new URL(window.location.href);
-                url.searchParams.set('view', safeMode);
-                window.history.replaceState({}, '', url);
-
-                document.querySelectorAll('.price-block').forEach(block => {
-                    const currentPrice = block.querySelector('.price-amount--current');
-                    const wholesalePrice = block.querySelector('.price-amount--wholesale');
-                    const currentLabel = block.querySelectorAll('.price-label')[0];
-                    const wholesaleLabel = block.querySelectorAll('.price-label')[1];
-                    const isWholesale = safeMode === 'wholesale';
-
-                    if (currentPrice) currentPrice.style.display = isWholesale ? 'none' : 'block';
-                    if (wholesalePrice) wholesalePrice.style.display = isWholesale ? 'block' : 'none';
-                    if (currentLabel) currentLabel.style.display = isWholesale ? 'none' : 'block';
-                    if (wholesaleLabel) wholesaleLabel.style.display = isWholesale ? 'block' : 'none';
-                });
-            }
-
-            if (secretToggle) {
-                secretToggle.addEventListener('click', () => {
-                    const currentMode = localStorage.getItem('catalogPriceMode') || 'current';
-                    const nextMode = currentMode === 'wholesale' ? 'current' : 'wholesale';
-                    setPriceMode(nextMode);
-                });
-            }
 
             function updateFilters(selectedTag) {
                 let visibleCount = 0;
@@ -504,9 +435,6 @@ $availableTags = $orderedAvailableTags;
                 });
             }
 
-            const urlMode = new URLSearchParams(window.location.search).get('view');
-            const savedMode = urlMode || localStorage.getItem('catalogPriceMode') || 'current';
-            setPriceMode(savedMode);
             updateFilters('TODOS');
         });
 

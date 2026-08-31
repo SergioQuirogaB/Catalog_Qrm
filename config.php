@@ -48,12 +48,6 @@ try {
         $db->exec("UPDATE products SET position = id WHERE position = 0");
     }
 
-    $wholesaleCol = $db->query("SHOW COLUMNS FROM products LIKE 'wholesale_price'");
-    if ($wholesaleCol && $wholesaleCol->rowCount() === 0) {
-        $db->exec("ALTER TABLE products ADD COLUMN wholesale_price DECIMAL(10,2) DEFAULT NULL");
-        $db->exec("UPDATE products SET wholesale_price = price WHERE wholesale_price IS NULL");
-    }
-
     $tblRes = $db->query("SHOW TABLES LIKE 'product_images'");
     if ($tblRes && $tblRes->rowCount() === 0) {
         $db->exec("CREATE TABLE product_images (

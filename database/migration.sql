@@ -9,10 +9,6 @@ ALTER TABLE products ADD COLUMN IF NOT EXISTS tag VARCHAR(50) DEFAULT 'Nuevo';
 -- Actualizar productos existentes con 'Nuevo' si no tienen tag
 UPDATE products SET tag = 'Nuevo' WHERE tag IS NULL OR tag = '';
 
--- Agregar columna wholesale_price si no existe
-ALTER TABLE products ADD COLUMN IF NOT EXISTS wholesale_price DECIMAL(10,2) DEFAULT NULL;
-UPDATE products SET wholesale_price = price WHERE wholesale_price IS NULL;
-
 -- Agregar columna position para ordenar productos
 ALTER TABLE products ADD COLUMN IF NOT EXISTS position INT DEFAULT 0;
 

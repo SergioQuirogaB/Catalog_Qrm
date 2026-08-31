@@ -60,18 +60,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             border-color: #00BFFF;
             box-shadow: 0 0 0 2px rgba(0, 191, 255, 0.2);
         }
-        .brand-mark {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 0.75rem;
-        }
-        .brand-logo {
-            max-width: 220px;
-            width: 100%;
-            height: auto;
-            display: block;
-        }
     </style>
 </head>
 <body class="bg-white min-h-screen relative flex items-center justify-center">
@@ -86,10 +74,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <?php echo $error; ?>
             </div>
         <?php endif; ?>
-
-        <div class="brand-mark">
-            <img src="../assets/imgs/logo/logoo.png" alt="Quiromar" class="brand-logo">
-        </div>
 
         <form method="post" class="space-y-4 sm:space-y-6">
             <div>

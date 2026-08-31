@@ -32,14 +32,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['order'])) {
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['name']) && isset($_FILES['images'])) {
     $name = $_POST['name'];
     $price = $_POST['price'];
-    $wholesalePrice = $_POST['wholesale_price'] ?? null;
     $tag = $_POST['tag'];
 
     $posStmt = $db->query("SELECT COALESCE(MAX(position), 0) + 1 FROM products");
     $position = $posStmt->fetchColumn();
 
-    $stmt = $db->prepare("INSERT INTO products (name, price, wholesale_price, tag, position) VALUES (?, ?, ?, ?, ?)");
-    $stmt->execute([$name, $price, $wholesalePrice !== '' ? $wholesalePrice : null, $tag, $position]);
+    $stmt = $db->prepare("INSERT INTO products (name, price, tag, position) VALUES (?, ?, ?, ?)");
+    $stmt->execute([$name, $price, $tag, $position]);
     $productId = $db->lastInsertId();
 
     $target_dir = "../uploads/";
@@ -86,11 +85,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['edit_id'])) {
     $id = $_POST['edit_id'];
     $name = $_POST['edit_name'];
     $price = $_POST['edit_price'];
-    $wholesalePrice = $_POST['edit_wholesale_price'] ?? null;
     $tag = $_POST['edit_tag'];
 
-    $update_fields = "name = ?, price = ?, wholesale_price = ?, tag = ?";
-    $params = [$name, $price, $wholesalePrice !== '' ? $wholesalePrice : null, $tag];
+    $update_fields = "name = ?, price = ?, tag = ?";
+    $params = [$name, $price, $tag];
 
     if (!empty($_POST['delete_images']) && is_array($_POST['delete_images'])) {
         $deleteStmt = $db->prepare("SELECT image_path FROM product_images WHERE id = ? AND product_id = ?");
@@ -320,12 +318,8 @@ $successType = $_GET['success'] ?? '';
                     <input type="text" name="name" class="input-field w-full px-4 py-3 border border-gray-300 rounded-lg" placeholder="Ej: Chocolate" required>
                 </div>
                 <div>
-                    <label class="block text-gray-700 font-medium mb-2">Precio actual</label>
+                    <label class="block text-gray-700 font-medium mb-2">Precio</label>
                     <input type="number" step="0.01" name="price" class="input-field w-full px-4 py-3 border border-gray-300 rounded-lg" placeholder="5000" required>
-                </div>
-                <div>
-                    <label class="block text-gray-700 font-medium mb-2">Precio mayorista</label>
-                    <input type="number" step="0.01" name="wholesale_price" class="input-field w-full px-4 py-3 border border-gray-300 rounded-lg" placeholder="3500">
                 </div>
                 <div>
                     <label class="block text-gray-700 font-medium mb-2">Etiqueta</label>
@@ -394,10 +388,7 @@ $successType = $_GET['success'] ?? '';
                                         <?php endif; ?>
                                     </td>
                                     <td class="px-4 py-2 font-medium"><?php echo $product['name']; ?></td>
-                                    <td class="px-4 py-2">
-                                        <div class="font-semibold text-dark-blue">Actual: $<?php echo number_format($product['price'], ($product['price'] == intval($product['price'])) ? 0 : 2, ',', '.'); ?></div>
-                                        <div class="text-sm text-gray-600">Mayorista: $<?php echo number_format($product['wholesale_price'] ?? $product['price'], (($product['wholesale_price'] ?? $product['price']) == intval($product['wholesale_price'] ?? $product['price'])) ? 0 : 2, ',', '.'); ?></div>
-                                    </td>
+                                    <td class="px-4 py-2">$<?php echo number_format($product['price'], ($product['price'] == intval($product['price'])) ? 0 : 2, ',', '.'); ?></td>
                                     <td class="px-4 py-2">
                                         <span class="catalog-tag <?php
                                             $tagKey = strtoupper(trim($product['tag']));
@@ -441,12 +432,8 @@ $successType = $_GET['success'] ?? '';
                                                 <input type="text" name="edit_name" value="<?php echo $product['name']; ?>" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-sweet-blue" required>
                                             </div>
                                             <div>
-                                                <label class="block text-gray-700 font-medium mb-1">Precio actual</label>
+                                                <label class="block text-gray-700 font-medium mb-1">Precio</label>
                                                 <input type="number" step="0.01" name="edit_price" value="<?php echo $product['price']; ?>" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-sweet-blue" required>
-                                            </div>
-                                            <div>
-                                                <label class="block text-gray-700 font-medium mb-1">Precio mayorista</label>
-                                                <input type="number" step="0.01" name="edit_wholesale_price" value="<?php echo $product['wholesale_price'] ?? ''; ?>" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-sweet-blue" placeholder="Opcional">
                                             </div>
                                             <div>
                                                 <label class="block text-gray-700 font-medium mb-1">Etiqueta</label>
