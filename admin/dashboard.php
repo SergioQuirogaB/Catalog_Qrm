@@ -80,6 +80,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['delete'])) {
     exit;
 }
 
+// Manejar cambio rápido de estado agotado/disponible
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['toggle_stock'])) {
+    $id = $_POST['toggle_stock'];
+    $productStmt = $db->prepare("SELECT tag FROM products WHERE id = ?");
+    $productStmt->execute([$id]);
+    $currentTag = strtoupper(trim((string) $productStmt->fetchColumn()));
+
+    $newTag = ($currentTag === 'AGOTADO') ? 'DISPONIBLE' : 'AGOTADO';
+    $updateStmt = $db->prepare("UPDATE products SET tag = ? WHERE id = ?");
+    $updateStmt->execute([$newTag, $id]);
+
+    header('Location: dashboard.php?success=stock');
+    exit;
+}
+
 // Manejar editar producto
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['edit_id'])) {
     $id = $_POST['edit_id'];
@@ -282,6 +297,38 @@ $successType = $_GET['success'] ?? '';
             color: #fff;
             text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
         }
+        .icon-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.9rem;
+            height: 1.9rem;
+            border-radius: 9999px;
+            font-size: 1.2rem;
+            border: none;
+            background: transparent;
+            padding: 0;
+            line-height: 1;
+            transition: transform 0.2s ease, background 0.2s ease, opacity 0.2s ease;
+            opacity: 0.9;
+        }
+        .icon-btn:hover {
+            transform: translateY(-1px) scale(1.04);
+            background: rgba(148, 163, 184, 0.12);
+            opacity: 1;
+        }
+        .icon-btn--edit {
+            color: #3b82f6;
+        }
+        .icon-btn--toggle {
+            color: #16a34a;
+        }
+        .icon-btn--toggle.is-agotado {
+            color: #ef4444;
+        }
+        .icon-btn--delete {
+            color: #ef4444;
+        }
     </style>
 </head>
 <body class="bg-white min-h-screen relative">
@@ -406,17 +453,23 @@ $successType = $_GET['success'] ?? '';
                                         </span>
                                     </td>
                                     <td class="px-4 py-2 text-center">
-                                        <div class="flex justify-center space-x-2">
-                                            <button onclick="toggleEdit(<?php echo $product['id']; ?>)" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition duration-300">Editar</button>
-                                            <!-- Eliminar con SweetAlert -->
+                                        <div class="flex justify-center items-center gap-2">
+                                            <button type="button" onclick="toggleEdit(<?php echo $product['id']; ?>)" class="icon-btn icon-btn--edit" title="Editar" aria-label="Editar producto">✏️</button>
+                                            <button type="button"
+                                                onclick="confirmToggleStock(<?php echo $product['id']; ?>, '<?php echo addslashes($product['name']); ?>', '<?php echo strtoupper(trim($product['tag'])); ?>')"
+                                                class="icon-btn icon-btn--toggle <?php echo strtoupper(trim($product['tag'])) === 'AGOTADO' ? 'is-agotado' : ''; ?>" 
+                                                title="Cambiar estado"
+                                                aria-label="Cambiar estado del producto">
+                                                <?php echo strtoupper(trim($product['tag'])) === 'AGOTADO' ? '✅' : '🚫'; ?>
+                                            </button>
                                             <button type="button"
                                                 onclick="confirmDelete(<?php echo $product['id']; ?>, '<?php echo addslashes($product['name']); ?>')"
-                                                class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition duration-300">
-                                                Eliminar
-                                            </button>
-                                            <!-- Formulario oculto para eliminar -->
+                                                class="icon-btn icon-btn--delete" title="Eliminar" aria-label="Eliminar producto">🗑️</button>
                                             <form id="delete-form-<?php echo $product['id']; ?>" method="post" class="hidden">
                                                 <input type="hidden" name="delete" value="<?php echo $product['id']; ?>">
+                                            </form>
+                                            <form id="toggle-stock-form-<?php echo $product['id']; ?>" method="post" class="hidden">
+                                                <input type="hidden" name="toggle_stock" value="<?php echo $product['id']; ?>">
                                             </form>
                                         </div>
                                     </td>
@@ -563,8 +616,24 @@ $successType = $_GET['success'] ?? '';
             updateOrderInput();
         }
 
+        function rememberScrollPosition() {
+            sessionStorage.setItem('dashboard-scroll', String(window.scrollY || document.documentElement.scrollTop || 0));
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             setupDragOrder();
+
+            const savedScroll = Number(sessionStorage.getItem('dashboard-scroll') || 0);
+            if (savedScroll > 0) {
+                requestAnimationFrame(() => {
+                    window.scrollTo({ top: savedScroll, behavior: 'auto' });
+                    sessionStorage.removeItem('dashboard-scroll');
+                });
+            }
+        });
+
+        document.querySelectorAll('form').forEach(form => {
+            form.addEventListener('submit', rememberScrollPosition);
         });
 
         function toggleEdit(id) {
@@ -585,9 +654,16 @@ $successType = $_GET['success'] ?? '';
                 cancelButtonText: 'Cancelar'
             }).then((result) => {
                 if (result.isConfirmed) {
+                    rememberScrollPosition();
                     document.getElementById('order-form').submit();
                 }
             });
+        }
+
+        // ─── Cambio rápido de stock sin confirmación ──────────────────────
+        function confirmToggleStock(productId) {
+            rememberScrollPosition();
+            document.getElementById('toggle-stock-form-' + productId).submit();
         }
 
         // ─── SweetAlert: Eliminar producto ────────────────────────────
@@ -603,6 +679,7 @@ $successType = $_GET['success'] ?? '';
                 cancelButtonText: 'Cancelar'
             }).then((result) => {
                 if (result.isConfirmed) {
+                    rememberScrollPosition();
                     document.getElementById('delete-form-' + productId).submit();
                 }
             });
@@ -622,47 +699,64 @@ $successType = $_GET['success'] ?? '';
                 cancelButtonText: 'Cancelar'
             }).then((result) => {
                 if (result.isConfirmed) {
+                    rememberScrollPosition();
                     form.submit();
                 }
             });
             return false;
         }
 
-        // ─── SweetAlert: Notificaciones al regresar de una acción ─────
+        // ─── SweetAlert: Notificaciones pequeñas arriba a la derecha ─────
+        const toastConfig = {
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 1800,
+            timerProgressBar: true,
+            background: '#ffffff',
+            color: '#1f2937',
+            customClass: {
+                popup: 'swal2-toast-small',
+                title: 'swal2-toast-title'
+            },
+            width: 220,
+            padding: '10px 12px',
+            didOpen: (toast) => {
+                toast.style.marginTop = '12px';
+                toast.style.marginRight = '12px';
+            }
+        };
+
         <?php if ($successType === 'edited'): ?>
         window.addEventListener('DOMContentLoaded', () => {
             Swal.fire({
-                title: '¡Producto actualizado!',
-                text: 'Los cambios se guardaron correctamente.',
+                ...toastConfig,
                 icon: 'success',
-                confirmButtonColor: '#00BFFF',
-                timer: 2500,
-                timerProgressBar: true,
-                showConfirmButton: false
+                title: 'Actualizado'
             });
         });
         <?php elseif ($successType === 'deleted'): ?>
         window.addEventListener('DOMContentLoaded', () => {
             Swal.fire({
-                title: '¡Producto eliminado!',
-                text: 'El producto fue removido del catálogo.',
+                ...toastConfig,
                 icon: 'success',
-                confirmButtonColor: '#00BFFF',
-                timer: 2500,
-                timerProgressBar: true,
-                showConfirmButton: false
+                title: 'Eliminado'
+            });
+        });
+        <?php elseif ($successType === 'stock'): ?>
+        window.addEventListener('DOMContentLoaded', () => {
+            Swal.fire({
+                ...toastConfig,
+                icon: 'success',
+                title: 'Estado listo'
             });
         });
         <?php elseif ($successType === 'order'): ?>
         window.addEventListener('DOMContentLoaded', () => {
             Swal.fire({
-                title: '¡Orden guardado!',
-                text: 'El catálogo mostrará los productos en el nuevo orden.',
+                ...toastConfig,
                 icon: 'success',
-                confirmButtonColor: '#00BFFF',
-                timer: 2500,
-                timerProgressBar: true,
-                showConfirmButton: false
+                title: 'Orden guardada'
             });
         });
         <?php endif; ?>

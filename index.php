@@ -41,6 +41,7 @@ $availableTags = $orderedAvailableTags;
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Catálogo de Productos - Dulcería Quiromar</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='52'%3E%F0%9F%90%BB%EF%B8%8F%E2%9D%84%3C/text%3E%3C/svg%3E">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -66,6 +67,90 @@ $availableTags = $orderedAvailableTags;
         }
     </script>
     <style>
+        :root {
+            --page-bg: #f8fbff;
+            --page-text: #1f2937;
+            --panel-bg: rgba(255,255,255,0.92);
+            --panel-border: rgba(14,165,233,0.2);
+            --panel-soft: rgba(239,246,255,0.9);
+            --card-bg: #ffffff;
+            --card-border: rgba(59,130,246,0.28);
+            --muted-text: #4b5563;
+            --button-sky: #ffffff;
+            --button-sky-text: #0284c7;
+            --button-admin: #00BFFF;
+            --button-admin-text: #ffffff;
+            --shadow-soft: rgba(15, 23, 42, 0.12);
+        }
+
+        body.theme-dark {
+            --page-bg: #07131d;
+            --page-text: #e2f3ff;
+            --panel-bg: rgba(15, 23, 42, 0.9);
+            --panel-border: rgba(125, 211, 252, 0.25);
+            --panel-soft: rgba(15, 23, 42, 0.7);
+            --card-bg: rgba(15, 23, 42, 0.92);
+            --card-border: rgba(125,211,252,0.32);
+            --muted-text: #cbd5e1;
+            --button-sky: rgba(15, 23, 42, 0.65);
+            --button-sky-text: #7dd3fc;
+            --button-admin: #0ea5e9;
+            --button-admin-text: #e0f2fe;
+            --shadow-soft: rgba(14, 165, 233, 0.18);
+        }
+
+        body {
+            background: var(--page-bg);
+            color: var(--page-text);
+            transition: background 0.25s ease, color 0.25s ease;
+        }
+
+        .floating-tools {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.75rem;
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 50;
+        }
+
+        .tool-btn {
+            width: 3rem;
+            height: 3rem;
+            border-radius: 9999px;
+            border: 2px solid rgba(255,255,255,0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            text-decoration: none;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+            box-shadow: 0 10px 25px var(--shadow-soft);
+        }
+
+        .tool-btn:hover {
+            transform: translateY(-1px) scale(1.02);
+        }
+
+        .tool-btn--admin {
+            background: var(--button-admin);
+            color: var(--button-admin-text);
+        }
+
+        .tool-btn--search {
+            background: var(--button-sky);
+            color: var(--button-sky-text);
+            border-color: var(--panel-border);
+        }
+
+        .tool-btn--theme {
+            background: var(--button-sky);
+            color: var(--button-sky-text);
+            border-color: var(--panel-border);
+        }
+
         .product-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 20px 40px rgba(0, 191, 255, 0.3);
@@ -212,12 +297,79 @@ $availableTags = $orderedAvailableTags;
         .footer-contact a:hover {
             transform: translateY(-1px);
         }
+        .whatsapp-float {
+            position: fixed;
+            right: 1.25rem;
+            bottom: 1.25rem;
+            width: 2.8rem;
+            height: 2.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 9999px;
+            background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+            color: white;
+            font-size: 1.25rem;
+            text-decoration: none;
+            box-shadow: 0 12px 28px rgba(18, 140, 126, 0.45), 0 0 0 6px rgba(37, 211, 102, 0.12);
+            border: 2px solid rgba(255,255,255,0.8);
+            z-index: 60;
+            animation: whatsappBlink 1.8s infinite ease-in-out;
+        }
+        .whatsapp-float::before {
+            content: '';
+            position: absolute;
+            inset: -0.45rem;
+            border: 2px solid rgba(37, 211, 102, 0.55);
+            border-radius: 9999px;
+            animation: whatsappRing 2s infinite ease-out;
+        }
+        .whatsapp-float:hover {
+            transform: translateY(-2px) scale(1.04);
+            box-shadow: 0 15px 30px rgba(18, 140, 126, 0.55), 0 0 0 10px rgba(37, 211, 102, 0.18);
+        }
+        @keyframes whatsappBlink {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+                filter: brightness(1);
+            }
+            50% {
+                transform: scale(1.06);
+                opacity: 0.9;
+                filter: brightness(1.12);
+            }
+        }
+        @keyframes whatsappRing {
+            0% {
+                transform: scale(0.9);
+                opacity: 1;
+            }
+            70% {
+                transform: scale(1.18);
+                opacity: 0;
+            }
+            100% {
+                transform: scale(1.18);
+                opacity: 0;
+            }
+        }
     </style>
 </head>
-<body class="font-rounded">
-    <!-- Admin Link -->
-    <div class="fixed top-4 right-4 z-50">
-        <a href="admin/login.php" class="bg-sweet-blue text-white w-12 h-12 flex items-center justify-center rounded-full hover:bg-blue-600 transition duration-300 text-xl shadow-lg" title="Admin">🐻‍❄️</a>
+<body class="font-rounded theme-light">
+    <div class="floating-tools">
+        <button id="searchToggleBtn" type="button" class="tool-btn tool-btn--search" title="Buscar">🔍</button>
+        <button id="themeToggleBtn" type="button" class="tool-btn tool-btn--theme" title="Cambiar tema">🌙</button>
+    </div>
+
+    <div id="searchPanel" class="fixed top-20 right-4 z-50 hidden w-[min(92vw,420px)]">
+        <div class="bg-white/95 backdrop-blur-sm border border-sky-200 rounded-2xl shadow-2xl p-3">
+            <div class="relative">
+                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-sky-500 text-lg">🔍</span>
+                <input id="productSearchInput" type="text" placeholder="Buscar producto..." class="w-full pl-12 pr-12 py-3 rounded-full border border-sky-200 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-sm" autocomplete="off">
+                <button id="closeSearchBtn" type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 text-xl" aria-label="Cerrar buscador">✕</button>
+            </div>
+        </div>
     </div>
 
     <div class="top-accent"></div>
@@ -263,7 +415,7 @@ $availableTags = $orderedAvailableTags;
                     $isAgotado = strtoupper(trim($product['tag'] ?? '')) === 'AGOTADO';
                     $tagValue = strtoupper(trim((string)($product['tag'] ?? '')));
                 ?>
-                    <div class="product-card bg-white rounded-xl shadow-lg overflow-hidden border-2 border-sweet-blue hover:border-dark-blue <?php echo $isAgotado ? 'product-card--agotado' : ''; ?>" data-tag="<?php echo $tagValue; ?>">
+                    <div class="product-card bg-white rounded-xl shadow-lg overflow-hidden border-2 border-sweet-blue hover:border-dark-blue <?php echo $isAgotado ? 'product-card--agotado' : ''; ?>" data-tag="<?php echo $tagValue; ?>" data-name="<?php echo htmlspecialchars($product['name'], ENT_QUOTES, 'UTF-8'); ?>">
                         <div class="h-80 sm:h-64 bg-white flex items-center justify-center relative overflow-hidden <?php echo $isAgotado ? 'product-image-area--agotado' : ''; ?>">
                             <?php
                                 $productImages = $imagesByProduct[$product['id']] ?? [];
@@ -334,6 +486,10 @@ $availableTags = $orderedAvailableTags;
         </div>
     </main>
 
+    <a href="https://wa.me/573133813154?text=Hola%20Dulcer%C3%ADa%20Quiromar%2C%20quiero%20hacer%20un%20pedido" target="_blank" rel="noopener" class="whatsapp-float" aria-label="Chatear por WhatsApp">
+        💬
+    </a>
+
     <footer class="bg-gradient-to-r from-slate-900 to-blue-900 text-white py-10 mt-12">
         <div class="max-w-6xl mx-auto px-6 text-center md:text-left md:flex md:items-center md:justify-between gap-6">
             <div>
@@ -349,6 +505,9 @@ $availableTags = $orderedAvailableTags;
                 <a href="tel:+573133813154" class="inline-flex items-center justify-center gap-2 text-blue-100 hover:text-white font-medium">
                     <span>📞</span>
                     <span>Llamar ahora</span>
+                </a>
+                <a href="admin/login.php" class="inline-flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-full font-medium border border-white/20 shadow-md transition duration-200">
+                    <span>Ingresar</span>
                 </a>
             </div>
         </div>
@@ -397,11 +556,44 @@ $availableTags = $orderedAvailableTags;
             const productCards = document.querySelectorAll('.product-card');
             const productCounter = document.getElementById('productCounter');
             const emptyState = document.getElementById('emptyState');
+            const searchToggleBtn = document.getElementById('searchToggleBtn');
+            const searchPanel = document.getElementById('searchPanel');
+            const searchInput = document.getElementById('productSearchInput');
+            const closeSearchBtn = document.getElementById('closeSearchBtn');
+            const themeToggleBtn = document.getElementById('themeToggleBtn');
+            let activeTag = 'TODOS';
+            let searchQuery = '';
 
-            function updateFilters(selectedTag) {
+            const savedTheme = localStorage.getItem('quiromar-theme') || 'light';
+            document.body.classList.toggle('theme-dark', savedTheme === 'dark');
+            document.body.classList.toggle('theme-light', savedTheme !== 'dark');
+            if (themeToggleBtn) {
+                themeToggleBtn.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+                themeToggleBtn.title = savedTheme === 'dark' ? 'Modo claro' : 'Modo oscuro';
+            }
+
+            function applyTheme(theme) {
+                const dark = theme === 'dark';
+                document.body.classList.toggle('theme-dark', dark);
+                document.body.classList.toggle('theme-light', !dark);
+                localStorage.setItem('quiromar-theme', theme);
+                if (themeToggleBtn) {
+                    themeToggleBtn.textContent = dark ? '☀️' : '🌙';
+                    themeToggleBtn.title = dark ? 'Modo claro' : 'Modo oscuro';
+                }
+            }
+
+            function updateFilters(selectedTag = activeTag, query = searchQuery) {
+                activeTag = selectedTag;
+                searchQuery = query.trim();
                 let visibleCount = 0;
+
                 productCards.forEach(card => {
-                    const shouldShow = selectedTag === 'TODOS' || (card.dataset.tag || '').toUpperCase() === selectedTag;
+                    const tagMatches = selectedTag === 'TODOS' || (card.dataset.tag || '').toUpperCase() === selectedTag;
+                    const name = (card.dataset.name || '').toLowerCase();
+                    const queryMatches = !searchQuery || name.includes(searchQuery.toLowerCase());
+                    const shouldShow = tagMatches && queryMatches;
+
                     card.style.display = shouldShow ? '' : 'none';
                     if (shouldShow) visibleCount++;
                 });
@@ -435,7 +627,49 @@ $availableTags = $orderedAvailableTags;
                 });
             }
 
-            updateFilters('TODOS');
+            if (searchToggleBtn && searchPanel && searchInput && closeSearchBtn) {
+                searchToggleBtn.addEventListener('click', () => {
+                    const isHidden = searchPanel.classList.contains('hidden');
+                    searchPanel.classList.toggle('hidden', !isHidden);
+                    if (isHidden) {
+                        setTimeout(() => searchInput.focus(), 50);
+                    }
+                });
+
+                closeSearchBtn.addEventListener('click', () => {
+                    searchPanel.classList.add('hidden');
+                    searchInput.value = '';
+                    updateFilters(activeTag, '');
+                });
+
+                searchInput.addEventListener('input', (event) => {
+                    updateFilters(activeTag, event.target.value || '');
+                });
+
+                document.addEventListener('keydown', (event) => {
+                    if (event.key === 'Escape') {
+                        searchPanel.classList.add('hidden');
+                        searchInput.value = '';
+                        updateFilters(activeTag, '');
+                    }
+                });
+
+                document.addEventListener('click', (event) => {
+                    const clickedInsideSearch = searchPanel.contains(event.target) || searchToggleBtn.contains(event.target);
+                    if (!clickedInsideSearch && !searchPanel.classList.contains('hidden')) {
+                        searchPanel.classList.add('hidden');
+                    }
+                });
+            }
+
+            if (themeToggleBtn) {
+                themeToggleBtn.addEventListener('click', () => {
+                    const nextTheme = document.body.classList.contains('theme-dark') ? 'light' : 'dark';
+                    applyTheme(nextTheme);
+                });
+            }
+
+            updateFilters('TODOS', '');
         });
 
         function sendOrder() {

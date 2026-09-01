@@ -42,6 +42,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     </script>
     <style>
+        body {
+            background: #f3f7fb;
+        }
         #particles-js {
             position: fixed;
             width: 100%;
@@ -50,44 +53,126 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             left: 0;
             z-index: -1;
         }
+        .login-shell {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
         .login-card {
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(255, 255, 255, 0.96);
             backdrop-filter: blur(10px);
-            border: 2px solid #00BFFF;
+            border: 2px solid rgba(0, 191, 255, 0.6);
+            border-radius: 24px;
+            width: min(100%, 420px);
+            box-shadow: 0 22px 40px rgba(15, 23, 42, 0.08);
+            padding: 20px 18px 22px;
+        }
+        .logo-wrap {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .logo-wrap img {
+            width: 110px;
+            height: 110px;
+            object-fit: contain;
+            border-radius: 9999px;
+            border: 4px solid rgba(0, 191, 255, 0.25);
+            background: #fff;
+            box-shadow: 0 8px 18px rgba(0, 191, 255, 0.12);
+        }
+        .input-field {
+            width: 100%;
+            min-height: 48px;
+            border-radius: 12px;
+            border: 1px solid #dbe3ee;
+            background: #f8fafc;
+            padding: 0.85rem 1rem;
+            font-size: 1rem;
+            color: #1f2937;
         }
         .input-field:focus {
             outline: none;
             border-color: #00BFFF;
-            box-shadow: 0 0 0 2px rgba(0, 191, 255, 0.2);
+            box-shadow: 0 0 0 2px rgba(0, 191, 255, 0.15);
+            background: #fff;
+        }
+        .login-label {
+            display: block;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #374151;
+            margin-bottom: 8px;
+        }
+        .login-btn {
+            display: block;
+            width: 100%;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #29c2ff 0%, #1b5fb8 100%);
+            color: white;
+            font-weight: 800;
+            font-size: 1.1rem;
+            padding: 0.9rem 1rem;
+            border: none;
+            box-shadow: 0 12px 22px rgba(27, 95, 184, 0.2);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+        }
+        .login-btn:hover {
+            transform: translateY(-1px);
+            filter: brightness(1.02);
+            box-shadow: 0 14px 26px rgba(27, 95, 184, 0.24);
+        }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            margin-top: 16px;
+            color: #1f3d7a;
+            font-weight: 600;
+            text-decoration: none;
+            transition: opacity 0.2s ease;
+        }
+        .back-link:hover {
+            opacity: 0.8;
         }
     </style>
 </head>
-<body class="bg-white min-h-screen relative flex items-center justify-center">
+<body class="min-h-screen relative">
     <!-- Particles Background -->
     <div id="particles-js"></div>
 
-    <div class="login-card rounded-xl shadow-2xl p-6 sm:p-8 w-full max-w-sm sm:max-w-md relative z-10">
-
-
-        <?php if (isset($error)): ?>
-            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                <?php echo $error; ?>
+    <div class="login-shell">
+        <div class="login-card relative z-10">
+            <div class="logo-wrap">
+                <img src="../assets/imgs/logo/logo.png" alt="Logo Dulcería Quiromar">
             </div>
-        <?php endif; ?>
 
-        <form method="post" class="space-y-4 sm:space-y-6">
-            <div>
-                <label class="block text-gray-700 font-medium mb-2">Usuario</label>
-                <input type="text" name="username" class="input-field w-full px-4 py-3 border border-gray-300 rounded-lg" placeholder="Ingresa tu usuario" minlength="4" maxlength="10" required>
-            </div>
-            <div>
-                <label class="block text-gray-700 font-medium mb-2">Contraseña</label>
-                <input type="password" name="password" class="input-field w-full px-4 py-3 border border-gray-300 rounded-lg" placeholder="Ingresa tu contraseña" minlength="6" maxlength="6" required>
-            </div>
-            <button type="submit" class="w-full bg-dark-blue text-white py-3 rounded-lg font-semibold hover:bg-blue-900 transition duration-300 shadow-lg">
-                Iniciar Sesión
-            </button>
-        </form>
+            <?php if (isset($error)): ?>
+                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                    <?php echo $error; ?>
+                </div>
+            <?php endif; ?>
+
+            <form method="post" class="space-y-5">
+                <div>
+                    <label class="login-label">Usuario</label>
+                    <input type="text" name="username" class="input-field" placeholder="Usuario" minlength="4" maxlength="10" required>
+                </div>
+                <div>
+                    <label class="login-label">Contraseña</label>
+                    <input type="password" name="password" class="input-field" placeholder="Contraseña" minlength="6" maxlength="6" required>
+                </div>
+                <button type="submit" class="login-btn">
+                    Iniciar Sesión
+                </button>
+            </form>
+
+            <a href="../index.php" class="back-link">← Volver al catálogo</a>
+        </div>
+    </div>
 
         <!-- <div class="text-center mt-6">
             <p class="text-gray-600">¿No tienes cuenta? <a href="register.php" class="text-sweet-blue hover:text-dark-blue font-medium">Regístrate</a></p>
